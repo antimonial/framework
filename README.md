@@ -1,6 +1,6 @@
-# Antimonial Framework
+# Antimonial
 
-A minimal, expressive PHP framework. No magic, no JS, no coupled services.
+A minimal, expressive PHP framework built for static, JavaScript-free websites.
 
 ## Requirements
 
