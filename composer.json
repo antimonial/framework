@@ -1,0 +1,28 @@
+{
+    "name": "antimonial/framework",
+    "description": "A minimal, expressive PHP framework. No magic, no JS, no coupled services.",
+    "type": "framework",
+    "license": "MIT",
+    "keywords": ["php", "framework", "mvc", "query-builder", "minimal"],
+    "homepage": "https://github.com/antimonial/framework",
+    "authors": [
+        {
+            "name": "antimonial"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/antimonial/framework/issues",
+        "source": "https://github.com/antimonial/framework"
+    },
+    "autoload": {
+        "psr-4": {
+            "Antimonial\\": "src/"
+        },
+        "files": [
+            "src/Core/Helpers.php"
+        ]
+    },
+    "require": {
+        "php": ">=8.1"
+    }
+}

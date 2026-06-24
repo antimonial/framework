@@ -1,0 +1,74 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Antimonial\Routing;
+
+use Antimonial\Middleware\MiddlewareInterface;
+
+/**
+ * Value object representing a single route.
+ *
+ * Holds the HTTP method, URI path, handler (closure or controller array),
+ * and any middleware attached to this route.
+ *
+ * @example
+ *   $route = new Route('GET', '/users/{id}', [UserController::class, 'show']);
+ *   $route->middleware(Auth::class);
+ *
+ * @see Router
+ * @see MiddlewareInterface
+ */
+class Route
+{
+    /**
+     * @var string HTTP method (GET, POST, PUT, DELETE, PATCH, etc.)
+     */
+    public readonly string $method;
+
+    /**
+     * @var string URI path pattern (e.g. '/users/{id}')
+     */
+    public readonly string $path;
+
+    /**
+     * Route handler: a closure or [ControllerClass::class, 'method'].
+     *
+     * @var \Closure|array{0: class-string, 1: string}
+     */
+    public readonly \Closure|array $handler;
+
+    /**
+     * Middleware classes to run before this route's handler.
+     *
+     * @var class-string[]
+     */
+    public array $middleware = [];
+
+    /**
+     * @param string                                      $method   HTTP method
+     * @param string                                      $path     URI path
+     * @param \Closure|array{0: class-string, 1: string}  $handler  Route handler
+     */
+    public function __construct(string $method, string $path, \Closure|array $handler)
+    {
+        $this->method = $method;
+        $this->path = $path;
+        $this->handler = $handler;
+    }
+
+    /**
+     * Attach middleware to this route (fluent).
+     *
+     * @example $route->middleware(Auth::class, AdminCheck::class);
+     *
+     * @param class-string ...$middleware Middleware class names
+     * @return $this
+     * @see MiddlewareInterface
+     */
+    public function middleware(string ...$middleware): static
+    {
+        $this->middleware = array_merge($this->middleware, $middleware);
+        return $this;
+    }
+}
