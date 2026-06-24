@@ -125,15 +125,6 @@ framework/
 └── README.md
 ```
 
-## Design Principles
-
-- **No DI container** — import dependencies explicitly
-- **No ORM** — QueryBuilder exposes transparent SQL
-- **No template engine** — PHP views with `extract()` + `include`, extensible via `View::setEngine()`
-- **No coupled services** — jobs, queues, mail, cache are external
-- **Middleware as closures** — onion pattern, no Pipeline class
-- **Zero JS dependencies**
-
 ## License
 
 MIT
