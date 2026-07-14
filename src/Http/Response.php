@@ -189,8 +189,12 @@ class Response
         }
 
         http_response_code($this->statusCode);
-        header('X-Content-Type-Options: nosniff');
-        header('X-Frame-Options: SAMEORIGIN');
+
+        foreach (['X-Content-Type-Options' => 'nosniff', 'X-Frame-Options' => 'SAMEORIGIN'] as $name => $value) {
+            if (!isset($this->headers[$name])) {
+                header("{$name}: {$value}");
+            }
+        }
 
         foreach ($this->headers as $name => $value) {
             header("{$name}: {$value}");
@@ -198,5 +202,9 @@ class Response
 
         echo $this->body;
         $this->sent = true;
+
+        if (isset($this->headers['Location'])) {
+            exit;
+        }
     }
 }
