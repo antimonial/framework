@@ -38,6 +38,16 @@ class Router
     private array $routes = [];
 
     /**
+     * Parameterized routes, keyed by HTTP method.
+     *
+     * Each method maps to a list of Route objects that contain
+     * {param} placeholders (matched via regex).
+     *
+     * @var array<string, Route[]>
+     */
+    private array $paramRoutes = [];
+
+    /**
      * Active group prefix stack.
      *
      * @var string[]
@@ -184,17 +194,15 @@ class Router
         }
 
         // Try parameterized match
-        if (isset($this->routes[$method])) {
-            foreach ($this->routes[$method] as $route) {
-                if (str_contains($route->path, '{')) {
-                    $params = $this->matchParameters($route->path, $uri);
-                    if ($params !== false) {
-                        return [
-                            'handler'    => $route->handler,
-                            'middleware' => array_merge($this->globalMiddleware, $route->middleware),
-                            'params'     => $params,
-                        ];
-                    }
+        if (isset($this->paramRoutes[$method])) {
+            foreach ($this->paramRoutes[$method] as $route) {
+                $params = $this->matchParameters($route->path, $uri);
+                if ($params !== false) {
+                    return [
+                        'handler'    => $route->handler,
+                        'middleware' => array_merge($this->globalMiddleware, $route->middleware),
+                        'params'     => $params,
+                    ];
                 }
             }
         }
@@ -216,7 +224,13 @@ class Router
     {
         $fullPath = $this->applyGroupPrefix($path);
         $route = new Route($method, $fullPath, $handler);
-        $this->routes[$method][] = $route;
+
+        if (str_contains($fullPath, '{')) {
+            $this->paramRoutes[$method][] = $route;
+        } else {
+            $this->routes[$method][$fullPath] = $route;
+        }
+
         return $route;
     }
 
