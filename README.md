@@ -147,8 +147,9 @@ return [
 
 ## Limitations
 
-- **MySQL only.** The `Connection` DSN is hardcoded to MySQL. Other drivers
-  require editing `Database/Connection.php`.
+- **Configurable database driver.** The `Connection` builds its DSN from a
+  `driver` config key (`mysql`, `pgsql`, `sqlite`); switching drivers is a
+  config change, not a code change. Only MySQL is exercised by the skeleton.
 - **No auto-escaping in views** (see Security above).
 - **No ORM, auth, sessions, CSRF, queues or cache** — by design, these are
   delegated to external services.
