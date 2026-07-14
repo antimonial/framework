@@ -129,6 +129,56 @@ return [
 ];
 ```
 
+## Security
+
+- **Escape output.** Views are plain PHP and are *not* auto-escaped. Always
+  escape user-facing data with the `e()` helper:
+  ```php
+  <?= e($user->name) ?>
+  ```
+- **Validation.** Controller `validate()` returns a `422` response (JSON with
+  an `errors` object) when rules fail.
+- **SQL identifiers.** Column/table names passed to `where()`, `orWhere()`,
+  `join()`, `orderBy()`, `groupBy()`, `having()` and `increment()`/`decrement()`
+  are validated against a strict whitelist (`^[a-zA-Z_]\w*$`, optionally
+  `table.column`). Values are always bound via prepared statements. Column
+  lists in `select()` and aggregate expressions (`sum()`, `avg()`, …) are
+  trusted — only pass developer-controlled values.
+
+## Limitations
+
+- **MySQL only.** The `Connection` DSN is hardcoded to MySQL. Other drivers
+  require editing `Database/Connection.php`.
+- **No auto-escaping in views** (see Security above).
+- **No ORM, auth, sessions, CSRF, queues or cache** — by design, these are
+  delegated to external services.
+- **Single-use query builder.** Terminal methods (`get`, `insert`, `update`,
+  `delete`, `count`, …) reset the builder, so create a fresh instance per query.
+
+## Running the example
+
+```bash
+composer install
+cp .env.example .env   # optional: set APP_DEBUG=true and DB_* variables
+```
+
+Create the application directories the framework expects:
+
+```
+app/
+├── Config/
+│   ├── app.php        # return ['timezone' => 'UTC'];
+│   └── database.php   # connection settings (see Database Config)
+├── Routes/
+│   └── web.php        # $router->get('/', fn () => view('home'));
+└── Views/
+    ├── home.php
+    └── layouts/
+        └── main.php
+```
+
+Then point your web server at `public/` (the front controller).
+
 ## Directory Structure
 
 ```
