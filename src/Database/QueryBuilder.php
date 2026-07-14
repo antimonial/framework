@@ -18,6 +18,16 @@ namespace Antimonial\Database;
  *
  * Named bindings use positional ? placeholders for simplicity.
  *
+ * Security: column/table identifiers passed to where(), orWhere(),
+ * join(), orderBy(), groupBy(), having() and increment()/decrement()
+ * are validated against a strict whitelist. Column lists in select()
+ * and aggregate expressions (sum/avg/min/max) are trusted and must
+ * only contain developer-controlled values.
+ *
+ * Note: a builder instance is single-use — terminal methods (get,
+ * insert, update, delete, count, ...) reset its state, so chain a
+ * fresh builder for each query.
+ *
  * @example
  *   DB::table('users')
  *       ->select('name', 'email')
@@ -119,7 +129,7 @@ class QueryBuilder
     public function __construct(Connection $connection, string $table)
     {
         $this->connection = $connection;
-        $this->table = $table;
+        $this->table = $this->assertIdentifier($table);
     }
 
     // ─── Chainable Query Builders ───────────────────────────────
@@ -166,6 +176,8 @@ class QueryBuilder
      */
     public function where(string $column, mixed $operatorOrValue, mixed $value = null): static
     {
+        $column = $this->assertIdentifier($column);
+
         if ($value === null && !$this->isOperator($operatorOrValue)) {
             $value = $operatorOrValue;
             $operatorOrValue = '=';
@@ -193,6 +205,8 @@ class QueryBuilder
      */
     public function orWhere(string $column, mixed $operatorOrValue, mixed $value = null): static
     {
+        $column = $this->assertIdentifier($column);
+
         if ($value === null && !$this->isOperator($operatorOrValue)) {
             $value = $operatorOrValue;
             $operatorOrValue = '=';
@@ -219,6 +233,8 @@ class QueryBuilder
      */
     public function whereIn(string $column, array $values): static
     {
+        $column = $this->assertIdentifier($column);
+
         if (empty($values)) {
             $this->wheres[] = ['logic' => 'AND', 'sql' => '1 = 0', 'bindings' => []];
             return $this;
@@ -249,6 +265,8 @@ class QueryBuilder
      */
     public function whereNotIn(string $column, array $values): static
     {
+        $column = $this->assertIdentifier($column);
+
         if (empty($values)) {
             return $this;
         }
@@ -279,6 +297,7 @@ class QueryBuilder
      */
     public function whereNull(string $column): static
     {
+        $column = $this->assertIdentifier($column);
         $this->wheres[] = ['logic' => 'AND', 'sql' => "{$column} IS NULL", 'bindings' => []];
         return $this;
     }
@@ -291,6 +310,7 @@ class QueryBuilder
      */
     public function whereNotNull(string $column): static
     {
+        $column = $this->assertIdentifier($column);
         $this->wheres[] = ['logic' => 'AND', 'sql' => "{$column} IS NOT NULL", 'bindings' => []];
         return $this;
     }
@@ -324,6 +344,15 @@ class QueryBuilder
      */
     public function join(string $table, string $col1, string $op, string $col2, string $type = 'INNER'): static
     {
+        $table = $this->assertIdentifier($table);
+        $col1 = $this->assertIdentifier($col1);
+        $col2 = $this->assertIdentifier($col2);
+
+        $allowedOps = ['=', '!=', '<>', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE'];
+        if (!in_array(strtoupper($op), $allowedOps, true)) {
+            throw new \InvalidArgumentException("Invalid JOIN operator: {$op}");
+        }
+
         $this->joins[] = [
             'type'  => strtoupper($type),
             'table' => $table,
@@ -356,6 +385,9 @@ class QueryBuilder
      */
     public function groupBy(string ...$columns): static
     {
+        foreach ($columns as $column) {
+            $this->assertIdentifier($column);
+        }
         $this->groups = array_merge($this->groups, $columns);
         return $this;
     }
@@ -370,6 +402,7 @@ class QueryBuilder
      */
     public function having(string $column, string $operator, mixed $value): static
     {
+        $column = $this->assertIdentifier($column);
         $placeholder = $this->addBinding($value);
         $this->havings[] = [
             'sql'      => "{$column} {$operator} {$placeholder}",
@@ -389,6 +422,7 @@ class QueryBuilder
      */
     public function orderBy(string $column, string $direction = 'ASC'): static
     {
+        $column = $this->assertIdentifier($column);
         $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
         $this->orders[] = ['column' => $column, 'direction' => $direction];
         return $this;
@@ -596,6 +630,9 @@ class QueryBuilder
     public function insert(array $data): string
     {
         $columns = array_keys($data);
+        foreach ($columns as $column) {
+            $this->assertIdentifier($column);
+        }
         $placeholders = [];
         $bindings = [];
 
@@ -630,6 +667,7 @@ class QueryBuilder
         $bindings = [];
 
         foreach ($data as $column => $value) {
+            $column = $this->assertIdentifier($column);
             $placeholder = $this->addBinding($value);
             $setParts[] = "{$column} = {$placeholder}";
             $bindings[] = $value;
@@ -679,6 +717,7 @@ class QueryBuilder
      */
     public function increment(string $column, int $amount = 1): int
     {
+        $column = $this->assertIdentifier($column);
         return $this->update([$column => new Raw("{$column} + {$amount}")]);
     }
 
@@ -692,6 +731,7 @@ class QueryBuilder
      */
     public function decrement(string $column, int $amount = 1): int
     {
+        $column = $this->assertIdentifier($column);
         return $this->update([$column => new Raw("{$column} - {$amount}")]);
     }
 
@@ -834,6 +874,30 @@ class QueryBuilder
      * @param mixed $value
      * @return bool
      */
+    /**
+     * Validate a SQL identifier (table or column name).
+     *
+     * Identifiers cannot be bound as query parameters (see the PHP
+     * manual entry for PDO::prepare), so when they originate from
+     * untrusted input they must be validated against a strict
+     * whitelist to prevent SQL injection.
+     *
+     * Allowed forms: a simple name (`user`) or a qualified name
+     * with a single dot (`user.id`).
+     *
+     * @param string $name
+     * @return string The validated identifier
+     * @throws \InvalidArgumentException If the identifier is invalid
+     */
+    private function assertIdentifier(string $name): string
+    {
+        if ($name === '' || !preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*$/', $name)) {
+            throw new \InvalidArgumentException("Invalid SQL identifier: {$name}");
+        }
+
+        return $name;
+    }
+
     private function isOperator(mixed $value): bool
     {
         return in_array(
