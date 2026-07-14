@@ -7,6 +7,7 @@ namespace Antimonial\Core;
 use Antimonial\Http\Request;
 use Antimonial\Http\Response;
 use Antimonial\Routing\Router;
+use Antimonial\Core\ValidationException;
 
 /**
  * Application kernel.
@@ -65,28 +66,31 @@ class App
 
         try {
             $match = $this->router->dispatch($request);
+
+            // Place route parameters into request attributes
+            foreach ($match['params'] as $key => $value) {
+                $request->set($key, $value);
+            }
+
+            $middlewares = $match['middleware'];
+            $handler = $match['handler'];
+
+            $response = $this->runMiddleware(
+                $middlewares,
+                $request,
+                fn (Request $req) => $this->dispatchController($handler, $req)
+            );
         } catch (HttpNotFoundException $e) {
             $response = (new Response())
                 ->status(404)
                 ->header('Content-Type', 'text/html; charset=UTF-8')
                 ->body('<h1>404 Not Found</h1>');
-            $response->send();
-            return;
+        } catch (ValidationException $e) {
+            $response = (new Response())
+                ->status(422)
+                ->header('Content-Type', 'application/json; charset=UTF-8')
+                ->body(json_encode(['errors' => $e->errors()], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
         }
-
-        // Place route parameters into request attributes
-        foreach ($match['params'] as $key => $value) {
-            $request->set($key, $value);
-        }
-
-        $middlewares = $match['middleware'];
-        $handler = $match['handler'];
-
-        $response = $this->runMiddleware(
-            $middlewares,
-            $request,
-            fn (Request $req) => $this->dispatchController($handler, $req)
-        );
 
         $response->send();
     }
