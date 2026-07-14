@@ -41,6 +41,11 @@ class Response
     private string $body = '';
 
     /**
+     * @var bool Whether the response has already been sent
+     */
+    private bool $sent = false;
+
+    /**
      * Set the HTTP status code.
      *
      * @param int $code
@@ -157,6 +162,7 @@ class Response
         setcookie($name, $value, [
             'expires'  => $expires > 0 ? time() + $expires : 0,
             'path'     => '/',
+            'secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
             'httponly'  => true,
             'samesite' => 'Lax',
         ]);
@@ -172,12 +178,24 @@ class Response
      */
     public function send(): void
     {
+        if ($this->sent) {
+            return;
+        }
+
+        if (headers_sent()) {
+            echo $this->body;
+            $this->sent = true;
+            return;
+        }
+
         http_response_code($this->statusCode);
+        header('X-Content-Type-Options: nosniff');
 
         foreach ($this->headers as $name => $value) {
             header("{$name}: {$value}");
         }
 
         echo $this->body;
+        $this->sent = true;
     }
 }

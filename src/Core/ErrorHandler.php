@@ -124,6 +124,7 @@ class ErrorHandler
     {
         http_response_code(500);
         header('Content-Type: text/html; charset=UTF-8');
+        header('X-Content-Type-Options: nosniff');
 
         if (self::$debug) {
             self::renderDebugPage($exception);
