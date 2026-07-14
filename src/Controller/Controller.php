@@ -157,6 +157,8 @@ class Controller
         $ruleName = $params[0];
         $paramValue = $params[1] ?? null;
 
+        $isNum = is_numeric($value);
+
         return match ($ruleName) {
             'required' => ($value === null || $value === '')
                 ? "The {$field} field is required."
@@ -166,12 +168,12 @@ class Controller
                 ? "The {$field} field must be a valid email address."
                 : null,
 
-            'min' => ($value !== null && $value !== '' && strlen((string) $value) < (int) $paramValue)
-                ? "The {$field} field must be at least {$paramValue} characters."
+            'min' => ($value !== null && $value !== '' && ($isNum ? (float) $value < (float) $paramValue : strlen((string) $value) < (int) $paramValue))
+                ? "The {$field} field must be at least {$paramValue}."
                 : null,
 
-            'max' => ($value !== null && $value !== '' && strlen((string) $value) > (int) $paramValue)
-                ? "The {$field} field must not exceed {$paramValue} characters."
+            'max' => ($value !== null && $value !== '' && ($isNum ? (float) $value > (float) $paramValue : strlen((string) $value) > (int) $paramValue))
+                ? "The {$field} field must not exceed {$paramValue}."
                 : null,
 
             'in' => ($value !== null && $value !== '' && !in_array((string) $value, explode(',', $paramValue), true))
