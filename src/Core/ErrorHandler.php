@@ -122,10 +122,12 @@ class ErrorHandler
      */
     private static function render(\Throwable $exception): void
     {
-        http_response_code(500);
-        header('Content-Type: text/html; charset=UTF-8');
-        header('X-Content-Type-Options: nosniff');
-        header('X-Frame-Options: SAMEORIGIN');
+        if (!headers_sent()) {
+            http_response_code(500);
+            header('Content-Type: text/html; charset=UTF-8');
+            header('X-Content-Type-Options: nosniff');
+            header('X-Frame-Options: SAMEORIGIN');
+        }
 
         if (self::$debug) {
             self::renderDebugPage($exception);
