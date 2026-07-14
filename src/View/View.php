@@ -107,6 +107,9 @@ class View
      *  2. The layout is rendered with $content (the inner view's output)
      *     and all original data variables available
      *
+     * @note The layout receives the inner view's output as `$content`. Do not
+     *       name a view variable `content`, as it would be overwritten.
+     *
      * @example View::renderWithLayout('users/index', 'layouts/main', ['users' => $users]);
      *
      * @param string      $path   View path
