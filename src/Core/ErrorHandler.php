@@ -33,6 +33,16 @@ class ErrorHandler
     }
 
     /**
+     * Whether debug mode is currently enabled.
+     *
+     * @return bool
+     */
+    public static function isDebug(): bool
+    {
+        return self::$debug;
+    }
+
+    /**
      * Register error, exception, and shutdown handlers.
      *
      * @return void

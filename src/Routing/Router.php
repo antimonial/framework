@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Antimonial\Routing;
 
+use Antimonial\Core\ErrorHandler;
 use Antimonial\Core\HttpNotFoundException;
 use Antimonial\Http\Request;
 
@@ -228,6 +229,9 @@ class Router
         if (str_contains($fullPath, '{')) {
             $this->paramRoutes[$method][] = $route;
         } else {
+            if (isset($this->routes[$method][$fullPath]) && ErrorHandler::isDebug()) {
+                trigger_error("Route {$method} {$fullPath} is already defined.", E_USER_NOTICE);
+            }
             $this->routes[$method][$fullPath] = $route;
         }
 
