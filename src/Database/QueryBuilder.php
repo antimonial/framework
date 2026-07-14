@@ -884,12 +884,6 @@ class QueryBuilder
     }
 
     /**
-     * Check if a value is a SQL operator.
-     *
-     * @param mixed $value
-     * @return bool
-     */
-    /**
      * Validate a SQL identifier (table or column name).
      *
      * Identifiers cannot be bound as query parameters (see the PHP
