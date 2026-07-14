@@ -65,7 +65,11 @@ function e(?string $value): string
 }
 
 /**
- * Get a value from the environment or .env file.
+ * Get a value from the process environment.
+ *
+ * Reads via getenv() only — it does NOT parse .env files nor read
+ * $_ENV/$_SERVER. Load dotenv-style files yourself (e.g. with a
+ * small parser or a package) before relying on env() for config.
  *
  * @example $dbHost = env('DB_HOST', 'localhost');
  *
@@ -129,6 +133,15 @@ function dd(mixed ...$vars): never
 function ddj(mixed ...$vars): never
 {
     header('Content-Type: application/json');
-    echo json_encode(count($vars) === 1 ? $vars[0] : $vars, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+    try {
+        echo json_encode(
+            count($vars) === 1 ? $vars[0] : $vars,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+        );
+    } catch (\JsonException $e) {
+        echo json_encode(['error' => 'json_encode failed: ' . $e->getMessage()]);
+    }
+
     exit(1);
 }
