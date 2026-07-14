@@ -3,6 +3,3 @@
 *.php diff=php
 *.html diff=html
 *.md diff=markdown
-
-/public export-ignore
-/.env.example export-ignore

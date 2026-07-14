@@ -155,38 +155,23 @@ return [
 - **Single-use query builder.** Terminal methods (`get`, `insert`, `update`,
   `delete`, `count`, …) reset the builder, so create a fresh instance per query.
 
-## Running the example
+## Running an application
+
+This package is the framework *library*. To build an application, use the
+official starter skeleton, which ships the front controller, `.htaccess`,
+`.env.example` and an `app/` structure:
 
 ```bash
-composer install
-cp .env.example .env   # optional: set APP_DEBUG=true and DB_* variables
+composer create-project antimonial/antimonial my-app
+cd my-app
 ```
-
-Create the application directories the framework expects:
-
-```
-app/
-├── Config/
-│   ├── app.php        # return ['timezone' => 'UTC'];
-│   └── database.php   # connection settings (see Database Config)
-├── Routes/
-│   └── web.php        # $router->get('/', fn () => view('home'));
-└── Views/
-    ├── home.php
-    └── layouts/
-        └── main.php
-```
-
-Then point your web server at `public/` (the front controller).
 
 ## Directory Structure
 
 ```
 framework/
-├── public/             # Entry point
-│   └── index.php
 ├── src/
-│   ├── Core/           # App, Autoloader, Config, ErrorHandler, Helpers, Exceptions
+│   ├── Core/           # App, Config, ErrorHandler, Helpers, DotEnv, Exceptions
 │   ├── Http/           # Request, Response
 │   ├── Routing/        # Router, Route
 │   ├── Controller/     # Base Controller with validation
@@ -195,7 +180,9 @@ framework/
 │   ├── Database/       # Connection, QueryBuilder, DB, Raw
 │   └── Model/          # Base Model with CRUD
 ├── composer.json
-└── README.md
+├── README.md
+├── LICENSE
+└── .gitattributes
 ```
 
 ## License
