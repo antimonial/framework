@@ -52,6 +52,7 @@ class Connection
     public function __construct(array $config)
     {
         $this->config = [
+            'driver'   => $config['driver'] ?? 'mysql',
             'host'     => $config['host'] ?? '127.0.0.1',
             'port'     => (int) ($config['port'] ?? 3306),
             'database' => $config['database'] ?? '',
@@ -69,13 +70,19 @@ class Connection
      */
     private function connect(): void
     {
-        $dsn = sprintf(
-            'mysql:host=%s;port=%d;dbname=%s;charset=%s',
-            $this->config['host'],
-            $this->config['port'],
-            $this->config['database'],
-            $this->config['charset'],
-        );
+        $driver = $this->config['driver'] ?? 'mysql';
+
+        $dsn = match ($driver) {
+            'sqlite' => 'sqlite:' . ($this->config['database'] !== '' ? $this->config['database'] : ':memory:'),
+            default  => sprintf(
+                '%s:host=%s;port=%d;dbname=%s;charset=%s',
+                $driver,
+                $this->config['host'],
+                $this->config['port'],
+                $this->config['database'],
+                $this->config['charset'],
+            ),
+        };
 
         $this->pdo = new \PDO($dsn, $this->config['username'], $this->config['password'], [
             \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
