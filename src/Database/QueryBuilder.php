@@ -615,6 +615,18 @@ class QueryBuilder
         return $this->aggregate("MAX({$column})");
     }
 
+    /**
+     * Run a single-column aggregate query and return its value.
+     *
+     * @param string $expression Aggregate expression (e.g. 'SUM(amount)')
+     * @return mixed The aggregate value, or null if no rows matched
+     */
+    private function aggregate(string $expression): mixed
+    {
+        $row = $this->select($expression)->first();
+        return $row === null ? null : array_values((array) $row)[0] ?? null;
+    }
+
     // ─── Write Methods ──────────────────────────────────────────
 
     /**
@@ -846,6 +858,9 @@ class QueryBuilder
         $bindings = [];
         foreach ($this->wheres as $where) {
             foreach ($where['bindings'] as $value) {
+                if ($value instanceof Raw) {
+                    continue;
+                }
                 $bindings[] = $value;
             }
         }
