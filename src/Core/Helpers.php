@@ -65,11 +65,11 @@ function e(?string $value): string
 }
 
 /**
- * Get a value from the process environment.
+ * Get a value from the environment.
  *
- * Reads via getenv() only — it does NOT parse .env files nor read
- * $_ENV/$_SERVER. Load dotenv-style files yourself (e.g. with a
- * small parser or a package) before relying on env() for config.
+ * Reads via getenv(). Variables populated by Core\DotEnv::load() (e.g. from
+ * a .env file) are resolved here too. Process environment variables always
+ * take precedence over values loaded from .env.
  *
  * @example $dbHost = env('DB_HOST', 'localhost');
  *

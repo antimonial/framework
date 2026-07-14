@@ -15,8 +15,8 @@ define('ROOT_PATH', __DIR__ . '/..');
 // Load Composer's autoloader (PSR-4)
 require ROOT_PATH . '/vendor/autoload.php';
 
-// Bootstrap helpers
-require ROOT_PATH . '/src/Core/Helpers.php';
+// Load environment variables from .env (if present)
+Antimonial\Core\DotEnv::load(ROOT_PATH . '/.env');
 
 // Load configuration
 Antimonial\Core\Config::load('app');
