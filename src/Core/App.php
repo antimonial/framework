@@ -182,7 +182,14 @@ class App
             };
         }
 
-        /** @var Response */
-        return $handler($request);
+        $result = $handler($request);
+
+        if (!$result instanceof Response) {
+            throw new \RuntimeException(
+                'Middleware must return an instance of ' . Response::class . ', got ' . get_debug_type($result)
+            );
+        }
+
+        return $result;
     }
 }
