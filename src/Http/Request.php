@@ -380,8 +380,9 @@ class Request
 
         // Strip base path if SCRIPT_NAME is set
         $script = $this->server['SCRIPT_NAME'] ?? '';
-        if ($script !== '' && str_starts_with($uri, $script)) {
-            $uri = substr($uri, strlen($script));
+        $base = dirname($script);
+        if ($base !== '' && $base !== '/' && str_starts_with($uri, $base)) {
+            $uri = substr($uri, strlen($base));
         }
 
         return '/' . ltrim($uri, '/');
