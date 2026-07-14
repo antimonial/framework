@@ -190,6 +190,7 @@ class Response
 
         http_response_code($this->statusCode);
         header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: SAMEORIGIN');
 
         foreach ($this->headers as $name => $value) {
             header("{$name}: {$value}");
