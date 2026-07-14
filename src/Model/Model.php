@@ -213,17 +213,19 @@ class Model
     /**
      * Auto-detect the table name from the class name.
      *
-     * Converts PascalCase to snake_case and pluralizes:
-     *  User -> users
+     * Converts PascalCase to snake_case and applies a basic plural
+     * suffix:
+     *  User     -> users
      *  BlogPost -> blog_posts
-     *  Category -> categories (basic 's' suffix)
+     *  Category -> categorys   (naive 's' suffix; set $table explicitly
+     *                           for irregular plurals like "categories")
      *
      * @return string
      */
     private function guessTableName(): string
     {
         // Remove 'Model' suffix if present
-        $class = (new \ReflectionClass($this))->getShortName();
+        $class = basename(str_replace('\\', '/', get_class($this)));
         $class = preg_replace('/Model$/', '', $class);
 
         // PascalCase -> snake_case
