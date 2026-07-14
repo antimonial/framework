@@ -1,6 +1,6 @@
 # Antimonial
 
-A minimal, expressive PHP framework built for static, JavaScript-free websites.
+A minimal, expressive PHP framework for server-rendered apps — no JavaScript dependencies by default.
 
 ## Requirements
 
@@ -20,7 +20,10 @@ composer require antimonial/framework
 <?php
 define('ROOT_PATH', __DIR__ . '/..');
 require ROOT_PATH . '/vendor/autoload.php';
-require ROOT_PATH . '/src/Core/Helpers.php';
+
+Antimonial\Core\Config::load('app');
+Antimonial\Core\Config::load('database');
+Antimonial\Core\ErrorHandler::enableDebug(true);
 
 $app = new Antimonial\Core\App();
 $app->run();
@@ -106,6 +109,26 @@ return ['timezone' => 'UTC', 'name' => 'My App'];
 $timezone = config('app.timezone');
 ```
 
+### Database Config
+
+The DB facade reads `database.default` and `database.connections.{default}`:
+
+```php
+// app/Config/database.php
+return [
+    'default' => 'mysql',
+    'connections' => [
+        'mysql' => [
+            'host'     => env('DB_HOST', '127.0.0.1'),
+            'port'     => env('DB_PORT', 3306),
+            'database' => env('DB_NAME', 'myapp'),
+            'username' => env('DB_USER', 'root'),
+            'password' => env('DB_PASS', ''),
+        ],
+    ],
+];
+```
+
 ## Directory Structure
 
 ```
@@ -113,12 +136,12 @@ framework/
 ├── public/             # Entry point
 │   └── index.php
 ├── src/
-│   ├── Core/           # App, Autoloader, Config, ErrorHandler, Helpers
+│   ├── Core/           # App, Autoloader, Config, ErrorHandler, Helpers, Exceptions
 │   ├── Http/           # Request, Response
 │   ├── Routing/        # Router, Route
 │   ├── Controller/     # Base Controller with validation
 │   ├── View/           # PHP view renderer with layout support
-│   ├── Middleware/      # MiddlewareInterface
+│   ├── Middleware/     # MiddlewareInterface
 │   ├── Database/       # Connection, QueryBuilder, DB, Raw
 │   └── Model/          # Base Model with CRUD
 ├── composer.json
