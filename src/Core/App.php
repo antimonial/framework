@@ -86,10 +86,18 @@ class App
                 ->header('Content-Type', 'text/html; charset=UTF-8')
                 ->body('<h1>404 Not Found</h1>');
         } catch (ValidationException $e) {
+            $errors = $e->errors();
+
+            try {
+                $body = json_encode(['errors' => $errors], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+            } catch (\JsonException $e) {
+                $body = json_encode(['errors' => ['validation' => 'unencodable']]);
+            }
+
             $response = (new Response())
                 ->status(422)
                 ->header('Content-Type', 'application/json; charset=UTF-8')
-                ->body(json_encode(['errors' => $e->errors()], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+                ->body($body);
         }
 
         $response->send();
