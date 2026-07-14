@@ -160,6 +160,18 @@ class QueryBuilder
     }
 
     /**
+     * Set the primary key column used by find().
+     *
+     * @param string $key
+     * @return $this
+     */
+    public function setPrimaryKey(string $key): static
+    {
+        $this->primaryKey = $key;
+        return $this;
+    }
+
+    /**
      * Add a WHERE clause.
      *
      * Supports two forms:

@@ -90,7 +90,7 @@ class Model
      */
     public function query(): QueryBuilder
     {
-        return $this->getConnection()->table($this->table);
+        return $this->getConnection()->table($this->table)->setPrimaryKey($this->primaryKey);
     }
 
     /**
