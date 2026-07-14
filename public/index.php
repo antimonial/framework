@@ -22,8 +22,8 @@ require ROOT_PATH . '/src/Core/Helpers.php';
 Antimonial\Core\Config::load('app');
 Antimonial\Core\Config::load('database');
 
-// Enable debug mode (set to false in production)
-Antimonial\Core\ErrorHandler::enableDebug(true);
+// Enable debug mode from the environment (set APP_DEBUG=true to turn on)
+Antimonial\Core\ErrorHandler::enableDebug((bool) env('APP_DEBUG', false));
 
 // Run the application
 $app = new Antimonial\Core\App();
