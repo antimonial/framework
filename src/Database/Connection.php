@@ -155,7 +155,11 @@ class Connection
         $stmt = $this->getPdo()->prepare($sql);
 
         foreach ($bindings as $i => $value) {
-            $stmt->bindValue($i + 1, $value);
+            if (is_bool($value)) {
+                $stmt->bindValue($i + 1, $value, \PDO::PARAM_BOOL);
+            } else {
+                $stmt->bindValue($i + 1, $value);
+            }
         }
 
         $stmt->execute();
