@@ -105,11 +105,40 @@ class Request
     {
         return new static(
             $_GET,
-            $_POST,
+            self::parseInput(),
             $_SERVER,
             $_COOKIE,
             $_FILES,
         );
+    }
+
+    /**
+     * Build the POST/input array from superglobals.
+     *
+     * For POST requests $_POST is already populated. For PUT/DELETE/PATCH
+     * with an application/x-www-form-urlencoded body, PHP does not populate
+     * $_POST, so we parse php://input manually (confirmed by the PHP docs:
+     * $_POST is only populated for POST form submissions).
+     *
+     * @return array<string, mixed>
+     */
+    private static function parseInput(): array
+    {
+        $input = $_POST;
+
+        $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+        if (in_array($method, ['PUT', 'DELETE', 'PATCH'], true)) {
+            $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+            if (stripos($contentType, 'application/x-www-form-urlencoded') !== false) {
+                $raw = file_get_contents('php://input');
+                if (is_string($raw) && $raw !== '') {
+                    parse_str($raw, $parsed);
+                    $input = array_merge($input, $parsed);
+                }
+            }
+        }
+
+        return $input;
     }
 
     /**
