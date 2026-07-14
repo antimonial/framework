@@ -24,6 +24,13 @@ class Config
     private static array $data = [];
 
     /**
+     * Config files that were looked up but do not exist (cached misses).
+     *
+     * @var array<string, true>
+     */
+    private static array $misses = [];
+
+    /**
      * Load a configuration file.
      *
      * The file should return an array. Example:
@@ -41,6 +48,9 @@ class Config
 
         if (file_exists($path)) {
             self::$data[$file] = require $path;
+            unset(self::$misses[$file]);
+        } else {
+            self::$misses[$file] = true;
         }
     }
 
@@ -57,6 +67,10 @@ class Config
     {
         $parts = explode('.', $key, 2);
         $file = $parts[0];
+
+        if (isset(self::$misses[$file])) {
+            return $default;
+        }
 
         if (!isset(self::$data[$file])) {
             self::load($file);
