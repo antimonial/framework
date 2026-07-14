@@ -138,10 +138,19 @@ class View
      */
     private static function resolve(string $path): string
     {
-        $file = self::getViewPath() . '/' . ltrim($path, '/') . '.php';
+        $base = realpath(self::getViewPath());
 
-        if (!file_exists($file)) {
-            throw new \RuntimeException("View not found: {$path} (looked in {$file})");
+        if ($base === false) {
+            throw new \RuntimeException("View directory not found: " . self::getViewPath());
+        }
+
+        $file = realpath($base . '/' . ltrim($path, '/') . '.php');
+
+        if ($file === false
+            || strncmp($file, $base . DIRECTORY_SEPARATOR, strlen($base) + 1) !== 0
+            || !is_file($file)
+        ) {
+            throw new \RuntimeException("View not found: {$path}");
         }
 
         return $file;
