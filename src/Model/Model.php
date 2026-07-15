@@ -132,7 +132,6 @@ class Model
      * @param mixed  $operatorOrValue
      * @param mixed  $value
      * @return QueryBuilder
-     * @throws PDOException If the database connection fails
      */
     public function where(string $column, mixed $operatorOrValue, mixed $value = null): QueryBuilder
     {
@@ -219,7 +218,7 @@ class Model
      * suffix:
      *  User     -> users
      *  BlogPost -> blog_posts
-     *  Category -> categorys   (naive 's' suffix; set $table explicitly
+     *  Category -> categorys   (naive 's' suffix — set $table explicitly
      *                           for irregular plurals like "categories")
      *
      * @return string

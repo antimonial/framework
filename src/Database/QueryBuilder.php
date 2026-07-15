@@ -673,7 +673,8 @@ class QueryBuilder
         $valueList = implode(', ', $placeholders);
 
         $sql = "INSERT INTO {$this->table} ({$columnList}) VALUES ({$valueList})";
-        $id = $this->connection->insert($sql, $bindings);
+        $filteredBindings = array_values(array_filter($bindings, fn($v) => !$v instanceof Raw));
+        $id = $this->connection->insert($sql, $filteredBindings);
         $this->reset();
 
         return $id;
@@ -706,6 +707,7 @@ class QueryBuilder
         $sql = "UPDATE {$this->table} SET {$setClause}" . ($whereClause !== '' ? " WHERE {$whereClause}" : '');
 
         $bindings = array_merge($bindings, $this->getWhereBindings());
+        $bindings = array_values(array_filter($bindings, fn($v) => !$v instanceof Raw));
         $affected = $this->connection->executeWrite($sql, $bindings);
         $this->reset();
 
@@ -922,6 +924,15 @@ class QueryBuilder
         return $name;
     }
 
+    /**
+     * Check if a value is a recognized SQL comparison operator.
+     *
+     * Used by where()/orWhere() to decide whether the second argument
+     * is an operator (e.g. '>') or a bare value for an implicit '='.
+     *
+     * @param mixed $value
+     * @return bool
+     */
     private function isOperator(mixed $value): bool
     {
         return in_array(

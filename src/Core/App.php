@@ -94,7 +94,7 @@ class App
 
             try {
                 $body = json_encode(['errors' => $errors], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-            } catch (JsonException $e) {
+            } catch (JsonException $jsonException) {
                 $body = json_encode(['errors' => ['validation' => 'unencodable']]);
             }
 

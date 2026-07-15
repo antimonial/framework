@@ -1,6 +1,6 @@
 # Antimonial
 
-A minimal, expressive PHP framework for server-rendered apps — no JavaScript dependencies by default.
+A minimal, expressive PHP framework for server-rendered apps.
 
 ## Requirements
 
@@ -140,8 +140,9 @@ return [
   an `errors` object) when rules fail.
 - **SQL identifiers.** Column/table names passed to `where()`, `orWhere()`,
   `join()`, `orderBy()`, `groupBy()`, `having()` and `increment()`/`decrement()`
-  are validated against a strict whitelist (`^[a-zA-Z_]\w*$`, optionally
-  `table.column`). Values are always bound via prepared statements. Column
+  are validated against a strict whitelist (`^[a-zA-Z_][a-zA-Z0-9_]*`,
+  optionally qualified as `table.column`). Values are always bound via
+  prepared statements. Column
   lists in `select()` and aggregate expressions (`sum()`, `avg()`, …) are
   trusted — only pass developer-controlled values.
 
