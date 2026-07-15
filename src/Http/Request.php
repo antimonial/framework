@@ -298,7 +298,13 @@ class Request
      */
     public function header(string $name, mixed $default = null): mixed
     {
-        $key = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
+        $normalized = strtoupper(str_replace('-', '_', $name));
+
+        // Per the CGI/1.1 spec, PHP stores Content-Type and Content-Length
+        // without the HTTP_ prefix. See https://www.php.net/manual/en/reserved.variables.server.php
+        $special = ['CONTENT_TYPE', 'CONTENT_LENGTH', 'CONTENT_MD5'];
+
+        $key = in_array($normalized, $special, true) ? $normalized : 'HTTP_' . $normalized;
 
         return $this->server[$key] ?? $default;
     }

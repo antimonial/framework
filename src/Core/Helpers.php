@@ -48,7 +48,7 @@ function view(string $path, array $data = [], ?string $layout = null): Response
  */
 function redirect(string $url, int $status = 302): Response
 {
-    return Response::redirect($url, $status);
+    return (new Response())->redirect($url, $status);
 }
 
 /**
@@ -119,7 +119,9 @@ function dd(mixed ...$vars): never
 {
     echo '<pre style="background:#1e1e2e;color:#cdd6f4;padding:1rem;font-family:monospace;">';
     foreach ($vars as $var) {
+        ob_start();
         var_dump($var);
+        echo htmlspecialchars(ob_get_clean(), ENT_QUOTES, 'UTF-8');
     }
     echo '</pre>';
     exit(1);

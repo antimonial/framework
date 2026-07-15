@@ -118,11 +118,6 @@ class QueryBuilder
     private string $primaryKey = 'id';
 
     /**
-     * @var array<int, mixed> Parameter bindings for prepared statements
-     */
-    private array $bindings = [];
-
-    /**
      * @param Connection $connection Database connection
      * @param string     $table      Table name
      */
@@ -415,6 +410,12 @@ class QueryBuilder
     public function having(string $column, string $operator, mixed $value): static
     {
         $column = $this->assertIdentifier($column);
+
+        $allowedOps = ['=', '!=', '<>', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE'];
+        if (!in_array(strtoupper($operator), $allowedOps, true)) {
+            throw new \InvalidArgumentException("Invalid HAVING operator: {$operator}");
+        }
+
         $placeholder = $this->addBinding($value);
         $this->havings[] = [
             'sql'      => "{$column} {$operator} {$placeholder}",
@@ -475,7 +476,7 @@ class QueryBuilder
     public function get(): array
     {
         $sql = $this->compileSelect();
-        $results = $this->connection->select($sql, $this->bindings);
+        $results = $this->connection->select($sql, $this->getWhereBindings());
         $this->reset();
         return $results;
     }
@@ -562,7 +563,7 @@ class QueryBuilder
         $sql = $this->compileSelect();
         $this->select = $originalSelect;
 
-        $result = $this->connection->select($sql, $this->bindings);
+        $result = $this->connection->select($sql, $this->getWhereBindings());
         $this->reset();
 
         return (int) ($result[0]->aggregate ?? 0);
@@ -891,7 +892,6 @@ class QueryBuilder
             return (string) $value;
         }
 
-        $this->bindings[] = $value;
         return '?';
     }
 
@@ -944,6 +944,5 @@ class QueryBuilder
         $this->orders = [];
         $this->limit = null;
         $this->offset = null;
-        $this->bindings = [];
     }
 }
