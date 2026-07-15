@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Antimonial\Model;
 
+use PDOException;
+
 use Antimonial\Core\Config;
 use Antimonial\Database\Connection;
 use Antimonial\Database\DB;
@@ -85,7 +87,7 @@ class Model
      * This is the main entry point for custom queries.
      *
      * @return QueryBuilder
-     * @throws \PDOException If the database connection fails
+     * @throws PDOException If the database connection fails
      * @see QueryBuilder
      */
     public function query(): QueryBuilder
@@ -100,7 +102,7 @@ class Model
      *
      * @param mixed $id
      * @return object|null
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      * @see QueryBuilder::find()
      */
     public function find(mixed $id): ?object
@@ -112,7 +114,7 @@ class Model
      * Get all rows from the table.
      *
      * @return object[]
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      */
     public function all(): array
     {
@@ -130,7 +132,7 @@ class Model
      * @param mixed  $operatorOrValue
      * @param mixed  $value
      * @return QueryBuilder
-     * @throws \PDOException If the database connection fails
+     * @throws PDOException If the database connection fails
      */
     public function where(string $column, mixed $operatorOrValue, mixed $value = null): QueryBuilder
     {
@@ -144,7 +146,7 @@ class Model
      *
      * @param array<string, mixed> $data
      * @return string Last inserted ID
-     * @throws \PDOException If the insert fails
+     * @throws PDOException If the insert fails
      * @see QueryBuilder::insert()
      */
     public function insert(array $data): string
@@ -164,7 +166,7 @@ class Model
      * @param mixed                $id
      * @param array<string, mixed> $data
      * @return int Affected row count
-     * @throws \PDOException If the update fails
+     * @throws PDOException If the update fails
      * @see QueryBuilder::update()
      */
     public function update(mixed $id, array $data): int
@@ -185,7 +187,7 @@ class Model
      *
      * @param mixed $id
      * @return int Affected row count
-     * @throws \PDOException If the delete fails
+     * @throws PDOException If the delete fails
      * @see QueryBuilder::delete()
      */
     public function delete(mixed $id): int
@@ -199,7 +201,7 @@ class Model
      * Get the database connection, creating one if needed.
      *
      * @return Connection
-     * @throws \PDOException If the connection fails
+     * @throws PDOException If the connection fails
      * @see DB::connection()
      */
     protected function getConnection(): Connection

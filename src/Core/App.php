@@ -8,6 +8,10 @@ use Antimonial\Http\Request;
 use Antimonial\Http\Response;
 use Antimonial\Routing\Router;
 use Antimonial\Core\ValidationException;
+use Closure;
+use JsonException;
+use RuntimeException;
+use Throwable;
 
 /**
  * Application kernel.
@@ -90,7 +94,7 @@ class App
 
             try {
                 $body = json_encode(['errors' => $errors], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-            } catch (\JsonException $e) {
+            } catch (JsonException $e) {
                 $body = json_encode(['errors' => ['validation' => 'unencodable']]);
             }
 
@@ -136,11 +140,11 @@ class App
      * @param array{0: class-string, 1: string}|callable $handler
      * @param Request $request
      * @return Response
-     * @throws \RuntimeException If the handler returns an unsupported type
+     * @throws RuntimeException If the handler returns an unsupported type
      */
     private function dispatchController(array|callable $handler, Request $request): Response
     {
-        if ($handler instanceof \Closure) {
+        if ($handler instanceof Closure) {
             $result = $handler($request);
         } else {
             [$class, $method] = $handler;
@@ -160,7 +164,7 @@ class App
             return (new Response())->body($result);
         }
 
-        throw new \RuntimeException(
+        throw new RuntimeException(
             'Controller must return Response, array, or string. Got ' . get_debug_type($result)
         );
     }
@@ -175,7 +179,7 @@ class App
      * @param Request   $request
      * @param callable  $core       The final handler (controller dispatch)
      * @return Response
-     * @throws \Throwable Any exception from middleware or controller
+     * @throws Throwable Any exception from middleware or controller
      * @see \Antimonial\Middleware\MiddlewareInterface
      */
     private function runMiddleware(array $middlewares, Request $request, callable $core): Response
@@ -193,7 +197,7 @@ class App
         $result = $handler($request);
 
         if (!$result instanceof Response) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'Middleware must return an instance of ' . Response::class . ', got ' . get_debug_type($result)
             );
         }

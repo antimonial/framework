@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Antimonial\View;
 
+use RuntimeException;
+
 /**
  * View renderer.
  *
@@ -82,7 +84,7 @@ class View
      * @param string $path View path relative to the Views directory (e.g. 'users/index')
      * @param array  $data Variables to make available in the view
      * @return string Rendered HTML
-     * @throws \RuntimeException If the view file does not exist
+     * @throws RuntimeException If the view file does not exist
      * @see renderWithLayout()
      */
     public static function render(string $path, array $data = []): string
@@ -116,7 +118,7 @@ class View
      * @param string|null $layout Layout path (null = no layout)
      * @param array       $data   Variables for the view
      * @return string
-     * @throws \RuntimeException If the view file does not exist
+     * @throws RuntimeException If the view file does not exist
      * @see render()
      */
     public static function renderWithLayout(string $path, ?string $layout, array $data = []): string
@@ -137,14 +139,14 @@ class View
      *
      * @param string $path
      * @return string Absolute file path
-     * @throws \RuntimeException If the view file does not exist
+     * @throws RuntimeException If the view file does not exist
      */
     private static function resolve(string $path): string
     {
         $base = realpath(self::getViewPath());
 
         if ($base === false) {
-            throw new \RuntimeException("View directory not found: " . self::getViewPath());
+            throw new RuntimeException("View directory not found: " . self::getViewPath());
         }
 
         $file = realpath($base . '/' . ltrim($path, '/') . '.php');
@@ -153,7 +155,7 @@ class View
             || strncmp($file, $base . DIRECTORY_SEPARATOR, strlen($base) + 1) !== 0
             || !is_file($file)
         ) {
-            throw new \RuntimeException("View not found: {$path}");
+            throw new RuntimeException("View not found: {$path}");
         }
 
         return $file;

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Antimonial\Http;
 
+use JsonException;
+
 /**
  * HTTP response builder.
  *
@@ -123,7 +125,7 @@ class Response
      * @param mixed $data   Data to encode (arrays, objects, etc.)
      * @param int   $status Optional status code
      * @return static
-     * @throws \JsonException If encoding fails
+     * @throws JsonException If encoding fails
      */
     public function json(mixed $data, int $status = 200): static
     {

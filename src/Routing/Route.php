@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Antimonial\Routing;
 
+use Closure;
+
 use Antimonial\Middleware\MiddlewareInterface;
 
 /**
@@ -34,9 +36,9 @@ class Route
     /**
      * Route handler: a closure or [ControllerClass::class, 'method'].
      *
-     * @var \Closure|array{0: class-string, 1: string}
+     * @var Closure|array{0: class-string, 1: string}
      */
-    public readonly \Closure|array $handler;
+    public readonly Closure|array $handler;
 
     /**
      * Middleware classes to run before this route's handler.
@@ -48,9 +50,9 @@ class Route
     /**
      * @param string                                      $method   HTTP method
      * @param string                                      $path     URI path
-     * @param \Closure|array{0: class-string, 1: string}  $handler  Route handler
+     * @param Closure|array{0: class-string, 1: string}  $handler  Route handler
      */
-    public function __construct(string $method, string $path, \Closure|array $handler)
+    public function __construct(string $method, string $path, Closure|array $handler)
     {
         $this->method = $method;
         $this->path = $path;

@@ -141,7 +141,7 @@ function ddj(mixed ...$vars): never
             count($vars) === 1 ? $vars[0] : $vars,
             JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
         );
-    } catch (\JsonException $e) {
+    } catch (JsonException $e) {
         echo json_encode(['error' => 'json_encode failed: ' . $e->getMessage()]);
     }
 

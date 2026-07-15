@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Antimonial\Database;
 
+use InvalidArgumentException;
+use PDOException;
+
 /**
  * Fluent SQL query builder.
  *
@@ -357,7 +360,7 @@ class QueryBuilder
 
         $allowedOps = ['=', '!=', '<>', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE'];
         if (!in_array(strtoupper($op), $allowedOps, true)) {
-            throw new \InvalidArgumentException("Invalid JOIN operator: {$op}");
+            throw new InvalidArgumentException("Invalid JOIN operator: {$op}");
         }
 
         $this->joins[] = [
@@ -413,7 +416,7 @@ class QueryBuilder
 
         $allowedOps = ['=', '!=', '<>', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE'];
         if (!in_array(strtoupper($operator), $allowedOps, true)) {
-            throw new \InvalidArgumentException("Invalid HAVING operator: {$operator}");
+            throw new InvalidArgumentException("Invalid HAVING operator: {$operator}");
         }
 
         $placeholder = $this->addBinding($value);
@@ -471,7 +474,7 @@ class QueryBuilder
      * Execute the query and return all results.
      *
      * @return object[] Array of stdClass objects
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      */
     public function get(): array
     {
@@ -485,7 +488,7 @@ class QueryBuilder
      * Get the first result row, or null if none found.
      *
      * @return object|null
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      */
     public function first(): ?object
     {
@@ -501,7 +504,7 @@ class QueryBuilder
      *
      * @param mixed $id
      * @return object|null
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      * @see Model::find()
      */
     public function find(mixed $id): ?object
@@ -516,7 +519,7 @@ class QueryBuilder
      *
      * @param string $column
      * @return mixed
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      */
     public function value(string $column): mixed
     {
@@ -532,7 +535,7 @@ class QueryBuilder
      * @param string      $key      Column to use as array key
      * @param string|null $valueKey Column to use as array value (null = entire row)
      * @return array
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      */
     public function pluck(string $key, ?string $valueKey = null): array
     {
@@ -554,7 +557,7 @@ class QueryBuilder
      * Count the number of rows matching the query.
      *
      * @return int
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      */
     public function count(): int
     {
@@ -573,7 +576,7 @@ class QueryBuilder
      * Check if any rows match the query.
      *
      * @return bool
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      */
     public function exists(): bool
     {
@@ -585,7 +588,7 @@ class QueryBuilder
      *
      * @param string $column
      * @return float
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      */
     public function sum(string $column): float
     {
@@ -597,7 +600,7 @@ class QueryBuilder
      *
      * @param string $column
      * @return float
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      */
     public function avg(string $column): float
     {
@@ -609,7 +612,7 @@ class QueryBuilder
      *
      * @param string $column
      * @return mixed
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      */
     public function min(string $column): mixed
     {
@@ -621,7 +624,7 @@ class QueryBuilder
      *
      * @param string $column
      * @return mixed
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      */
     public function max(string $column): mixed
     {
@@ -649,7 +652,7 @@ class QueryBuilder
      *
      * @param array<string, mixed> $data Column => value pairs
      * @return string Last inserted ID
-     * @throws \PDOException If the insert fails
+     * @throws PDOException If the insert fails
      * @see Model::insert()
      */
     public function insert(array $data): string
@@ -683,7 +686,7 @@ class QueryBuilder
      *
      * @param array<string, mixed> $data Column => value pairs
      * @return int Affected row count
-     * @throws \PDOException If the update fails
+     * @throws PDOException If the update fails
      * @see Model::update()
      */
     public function update(array $data): int
@@ -715,7 +718,7 @@ class QueryBuilder
      * @example DB::table('users')->where('id', 42)->delete();
      *
      * @return int Affected row count
-     * @throws \PDOException If the delete fails
+     * @throws PDOException If the delete fails
      * @see Model::delete()
      */
     public function delete(): int
@@ -738,7 +741,7 @@ class QueryBuilder
      * @param string $column
      * @param int    $amount
      * @return int Affected row count
-     * @throws \PDOException If the update fails
+     * @throws PDOException If the update fails
      */
     public function increment(string $column, int $amount = 1): int
     {
@@ -752,7 +755,7 @@ class QueryBuilder
      * @param string $column
      * @param int    $amount
      * @return int Affected row count
-     * @throws \PDOException If the update fails
+     * @throws PDOException If the update fails
      */
     public function decrement(string $column, int $amount = 1): int
     {
@@ -908,12 +911,12 @@ class QueryBuilder
      *
      * @param string $name
      * @return string The validated identifier
-     * @throws \InvalidArgumentException If the identifier is invalid
+     * @throws InvalidArgumentException If the identifier is invalid
      */
     private function assertIdentifier(string $name): string
     {
         if ($name === '' || !preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*$/', $name)) {
-            throw new \InvalidArgumentException("Invalid SQL identifier: {$name}");
+            throw new InvalidArgumentException("Invalid SQL identifier: {$name}");
         }
 
         return $name;

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Antimonial\Database;
 
+use PDO;
+use PDOException;
+use PDOStatement;
+
 /**
  * PDO database connection wrapper.
  *
@@ -28,9 +32,9 @@ class Connection
     /**
      * The PDO instance (null until connected).
      *
-     * @var \PDO|null
+     * @var PDO|null
      */
-    private ?\PDO $pdo = null;
+    private ?PDO $pdo = null;
 
     /**
      * Connection configuration.
@@ -66,7 +70,7 @@ class Connection
      * Establish the PDO connection.
      *
      * @return void
-     * @throws \PDOException If the connection fails
+     * @throws PDOException If the connection fails
      */
     private function connect(): void
     {
@@ -84,20 +88,20 @@ class Connection
             ),
         };
 
-        $this->pdo = new \PDO($dsn, $this->config['username'], $this->config['password'], [
-            \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
-            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_OBJ,
-            \PDO::ATTR_EMULATE_PREPARES   => false,
+        $this->pdo = new PDO($dsn, $this->config['username'], $this->config['password'], [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
+            PDO::ATTR_EMULATE_PREPARES   => false,
         ]);
     }
 
     /**
      * Get the PDO instance, connecting if necessary.
      *
-     * @return \PDO
-     * @throws \PDOException If the connection fails
+     * @return PDO
+     * @throws PDOException If the connection fails
      */
-    public function getPdo(): \PDO
+    public function getPdo(): PDO
     {
         if ($this->pdo === null) {
             $this->connect();
@@ -113,7 +117,7 @@ class Connection
      * @param string $sql      SQL query with ? placeholders
      * @param array  $bindings Parameter values
      * @return object[] Array of stdClass objects
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      */
     public function select(string $sql, array $bindings = []): array
     {
@@ -127,7 +131,7 @@ class Connection
      * @param string $sql      SQL query with ? placeholders
      * @param array  $bindings Parameter values
      * @return string The last inserted row ID
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      */
     public function insert(string $sql, array $bindings = []): string
     {
@@ -141,7 +145,7 @@ class Connection
      * @param string $sql      SQL query with ? placeholders
      * @param array  $bindings Parameter values
      * @return int Number of affected rows
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      */
     public function executeWrite(string $sql, array $bindings = []): int
     {
@@ -154,16 +158,16 @@ class Connection
      *
      * @param string $sql
      * @param array  $bindings
-     * @return \PDOStatement
-     * @throws \PDOException If the query fails
+     * @return PDOStatement
+     * @throws PDOException If the query fails
      */
-    public function execute(string $sql, array $bindings = []): \PDOStatement
+    public function execute(string $sql, array $bindings = []): PDOStatement
     {
         $stmt = $this->getPdo()->prepare($sql);
 
         foreach ($bindings as $i => $value) {
             if (is_bool($value)) {
-                $stmt->bindValue($i + 1, $value, \PDO::PARAM_BOOL);
+                $stmt->bindValue($i + 1, $value, PDO::PARAM_BOOL);
             } else {
                 $stmt->bindValue($i + 1, $value);
             }
@@ -177,7 +181,7 @@ class Connection
      * Get the last inserted row ID.
      *
      * @return string
-     * @throws \PDOException If the connection is not established
+     * @throws PDOException If the connection is not established
      */
     public function lastInsertId(): string
     {
@@ -190,7 +194,7 @@ class Connection
      * Begin a database transaction.
      *
      * @return void
-     * @throws \PDOException If the transaction cannot be started
+     * @throws PDOException If the transaction cannot be started
      */
     public function beginTransaction(): void
     {
@@ -201,7 +205,7 @@ class Connection
      * Commit the active transaction.
      *
      * @return void
-     * @throws \PDOException If the commit fails
+     * @throws PDOException If the commit fails
      */
     public function commit(): void
     {
@@ -212,7 +216,7 @@ class Connection
      * Roll back the active transaction.
      *
      * @return void
-     * @throws \PDOException If the rollback fails
+     * @throws PDOException If the rollback fails
      */
     public function rollBack(): void
     {

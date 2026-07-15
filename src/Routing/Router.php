@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Antimonial\Routing;
 
+use Closure;
+
 use Antimonial\Core\ErrorHandler;
 use Antimonial\Core\HttpNotFoundException;
 use Antimonial\Http\Request;
@@ -70,10 +72,10 @@ class Router
      * @example $router->get('/users/{id}', [UserController::class, 'show']);
      *
      * @param string                                      $path
-     * @param \Closure|array{0: class-string, 1: string}  $handler
+     * @param Closure|array{0: class-string, 1: string}  $handler
      * @return Route
      */
-    public function get(string $path, \Closure|array $handler): Route
+    public function get(string $path, Closure|array $handler): Route
     {
         return $this->addRoute('GET', $path, $handler);
     }
@@ -84,10 +86,10 @@ class Router
      * @example $router->post('/users', [UserController::class, 'store']);
      *
      * @param string                                      $path
-     * @param \Closure|array{0: class-string, 1: string}  $handler
+     * @param Closure|array{0: class-string, 1: string}  $handler
      * @return Route
      */
-    public function post(string $path, \Closure|array $handler): Route
+    public function post(string $path, Closure|array $handler): Route
     {
         return $this->addRoute('POST', $path, $handler);
     }
@@ -98,10 +100,10 @@ class Router
      * @example $router->put('/users/{id}', [UserController::class, 'update']);
      *
      * @param string                                      $path
-     * @param \Closure|array{0: class-string, 1: string}  $handler
+     * @param Closure|array{0: class-string, 1: string}  $handler
      * @return Route
      */
-    public function put(string $path, \Closure|array $handler): Route
+    public function put(string $path, Closure|array $handler): Route
     {
         return $this->addRoute('PUT', $path, $handler);
     }
@@ -112,10 +114,10 @@ class Router
      * @example $router->delete('/users/{id}', [UserController::class, 'destroy']);
      *
      * @param string                                      $path
-     * @param \Closure|array{0: class-string, 1: string}  $handler
+     * @param Closure|array{0: class-string, 1: string}  $handler
      * @return Route
      */
-    public function delete(string $path, \Closure|array $handler): Route
+    public function delete(string $path, Closure|array $handler): Route
     {
         return $this->addRoute('DELETE', $path, $handler);
     }
@@ -125,10 +127,10 @@ class Router
      *
      * @param string[]                                    $methods
      * @param string                                      $path
-     * @param \Closure|array{0: class-string, 1: string}  $handler
+     * @param Closure|array{0: class-string, 1: string}  $handler
      * @return Route[]
      */
-    public function match(array $methods, string $path, \Closure|array $handler): array
+    public function match(array $methods, string $path, Closure|array $handler): array
     {
         $routes = [];
         foreach ($methods as $method) {
@@ -176,7 +178,7 @@ class Router
      * Returns the handler, middleware, and extracted parameters.
      *
      * @param Request $request
-     * @return array{handler: \Closure|array, middleware: class-string[], params: array<string, string>}
+     * @return array{handler: Closure|array, middleware: class-string[], params: array<string, string>}
      * @throws HttpNotFoundException If no route matches
      */
     public function dispatch(Request $request): array
@@ -218,10 +220,10 @@ class Router
      *
      * @param string              $method
      * @param string              $path
-     * @param \Closure|array      $handler
+     * @param Closure|array      $handler
      * @return Route The registered Route instance
      */
-    private function addRoute(string $method, string $path, \Closure|array $handler): Route
+    private function addRoute(string $method, string $path, Closure|array $handler): Route
     {
         $fullPath = $this->applyGroupPrefix($path);
         $route = new Route($method, $fullPath, $handler);

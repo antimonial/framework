@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Antimonial\Database;
 
+use PDOException;
+
 /**
  * Static database access facade.
  *
@@ -36,7 +38,7 @@ class DB
      *
      * @param array<string, mixed>|null $config Optional config override
      * @return Connection
-     * @throws \PDOException If the connection fails
+     * @throws PDOException If the connection fails
      * @see Connection::__construct()
      */
     public static function connection(?array $config = null): Connection
@@ -72,7 +74,7 @@ class DB
      * @param string $sql
      * @param array  $bindings
      * @return object[]
-     * @throws \PDOException If the query fails
+     * @throws PDOException If the query fails
      */
     public static function select(string $sql, array $bindings = []): array
     {
@@ -94,7 +96,7 @@ class DB
      * Begin a database transaction.
      *
      * @return void
-     * @throws \PDOException If the transaction cannot be started
+     * @throws PDOException If the transaction cannot be started
      */
     public static function beginTransaction(): void
     {
@@ -105,7 +107,7 @@ class DB
      * Commit the active transaction.
      *
      * @return void
-     * @throws \PDOException If the commit fails
+     * @throws PDOException If the commit fails
      */
     public static function commit(): void
     {
@@ -116,7 +118,7 @@ class DB
      * Roll back the active transaction.
      *
      * @return void
-     * @throws \PDOException If the rollback fails
+     * @throws PDOException If the rollback fails
      */
     public static function rollBack(): void
     {

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Antimonial\Core;
 
+use ErrorException;
+use Throwable;
+
 /**
  * Global error and exception handler.
  *
@@ -65,14 +68,14 @@ class ErrorHandler
      * @param string $file    Source file
      * @param int    $line    Line number
      * @return void
-     * @throws \ErrorException Always
+     * @throws ErrorException Always
      */
     public static function handleError(int $level, string $message, string $file, int $line): void
     {
         if (!(error_reporting() & $level)) {
             return;
         }
-        throw new \ErrorException($message, 0, $level, $file, $line);
+        throw new ErrorException($message, 0, $level, $file, $line);
     }
 
     /**
@@ -80,10 +83,10 @@ class ErrorHandler
      *
      * Logs the error and renders a 500 response.
      *
-     * @param \Throwable $exception
+     * @param Throwable $exception
      * @return void
      */
-    public static function handleException(\Throwable $exception): void
+    public static function handleException(Throwable $exception): void
     {
         self::log($exception);
         self::render($exception);
@@ -100,7 +103,7 @@ class ErrorHandler
     {
         $error = error_get_last();
         if ($error !== null && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
-            $exception = new \ErrorException($error['message'], 0, $error['type'], $error['file'], $error['line']);
+            $exception = new ErrorException($error['message'], 0, $error['type'], $error['file'], $error['line']);
             self::log($exception);
             self::render($exception);
         }
@@ -109,10 +112,10 @@ class ErrorHandler
     /**
      * Log the exception to the error log.
      *
-     * @param \Throwable $exception
+     * @param Throwable $exception
      * @return void
      */
-    private static function log(\Throwable $exception): void
+    private static function log(Throwable $exception): void
     {
         $message = sprintf(
             "[%s] %s in %s:%d\n",
@@ -127,10 +130,10 @@ class ErrorHandler
     /**
      * Render an error response (HTML in debug mode, minimal otherwise).
      *
-     * @param \Throwable $exception
+     * @param Throwable $exception
      * @return void
      */
-    private static function render(\Throwable $exception): void
+    private static function render(Throwable $exception): void
     {
         if (!headers_sent()) {
             http_response_code(500);
@@ -150,10 +153,10 @@ class ErrorHandler
     /**
      * Render a detailed debug error page with stack trace.
      *
-     * @param \Throwable $exception
+     * @param Throwable $exception
      * @return void
      */
-    private static function renderDebugPage(\Throwable $exception): void
+    private static function renderDebugPage(Throwable $exception): void
     {
         $trace = htmlspecialchars($exception->getTraceAsString());
         $file = htmlspecialchars((string) $exception->getFile());
