@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Antimonial\Database;
 
+use Closure;
 use InvalidArgumentException;
 use PDOException;
 
@@ -172,20 +173,36 @@ class QueryBuilder
     /**
      * Add a WHERE clause.
      *
-     * Supports two forms:
-     *  - where('column', value)        -> column = value
-     *  - where('column', '>', value)   -> column > value
+     * Supports three forms:
+     *  - where('column', value)              -> column = value
+     *  - where('column', '>', value)         -> column > value
+     *  - where(function ($q) { ... })        -> nested grouped conditions (AND)
      *
      * @example ->where('age', '>=', 18)
      * @example ->where('active', true)
+     * @example ->where(function ($q) { $q->whereNull('assignee_id')->orWhere('priority', 'high'); })
      *
-     * @param string        $column
-     * @param mixed         $operatorOrValue Operator (e.g. '=', '>', 'LIKE') or value when using shorthand
-     * @param mixed         $value           Value when using operator form
+     * @param string|Closure $column          Column name or Closure for grouped conditions
+     * @param mixed          $operatorOrValue Operator or value when using shorthand
+     * @param mixed          $value           Value when using operator form
      * @return $this
      */
-    public function where(string $column, mixed $operatorOrValue, mixed $value = null): static
+    public function where(string|Closure $column, mixed $operatorOrValue = null, mixed $value = null): static
     {
+        if ($column instanceof Closure) {
+            $sub = new QueryBuilder($this->connection, $this->table);
+            $column($sub);
+            $sql = $sub->compileWheres();
+            if ($sql !== '') {
+                $this->wheres[] = [
+                    'logic'    => 'AND',
+                    'sql'      => '(' . $sql . ')',
+                    'bindings' => $sub->getWhereBindings(),
+                ];
+            }
+            return $this;
+        }
+
         $column = $this->assertIdentifier($column);
 
         if ($value === null && !$this->isOperator($operatorOrValue)) {
@@ -206,15 +223,34 @@ class QueryBuilder
     /**
      * Add an OR WHERE clause.
      *
-     * @example ->where('active', true)->orWhere('role', 'admin')
+     * Supports two forms:
+     *  - orWhere('column', value)             -> OR column = value
+     *  - orWhere(function ($q) { ... })       -> nested grouped conditions (OR)
      *
-     * @param string        $column
-     * @param mixed         $operatorOrValue
-     * @param mixed         $value
+     * @example ->where('active', true)->orWhere('role', 'admin')
+     * @example ->where('name', 'foo')->orWhere(function ($q) { $q->where('age', 18)->where('active', true); })
+     *
+     * @param string|Closure $column          Column name or Closure for grouped conditions
+     * @param mixed          $operatorOrValue
+     * @param mixed          $value
      * @return $this
      */
-    public function orWhere(string $column, mixed $operatorOrValue, mixed $value = null): static
+    public function orWhere(string|Closure $column, mixed $operatorOrValue = null, mixed $value = null): static
     {
+        if ($column instanceof Closure) {
+            $sub = new QueryBuilder($this->connection, $this->table);
+            $column($sub);
+            $sql = $sub->compileWheres();
+            if ($sql !== '') {
+                $this->wheres[] = [
+                    'logic'    => 'OR',
+                    'sql'      => '(' . $sql . ')',
+                    'bindings' => $sub->getWhereBindings(),
+                ];
+            }
+            return $this;
+        }
+
         $column = $this->assertIdentifier($column);
 
         if ($value === null && !$this->isOperator($operatorOrValue)) {
