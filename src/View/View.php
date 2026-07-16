@@ -81,13 +81,14 @@ class View
      *
      * @example View::render('users/index', ['users' => $users]);
      *
-     * @param string $path View path relative to the Views directory (e.g. 'users/index')
-     * @param array  $data Variables to make available in the view
+     * @param string $path  View path relative to the Views directory (e.g. 'users/index')
+     * @param array  $data  Variables to make available in the view
+     * @param array|null &$capturedVars If set, receives any extra variables defined by the view
      * @return string Rendered HTML
      * @throws RuntimeException If the view file does not exist
      * @see renderWithLayout()
      */
-    public static function render(string $path, array $data = []): string
+    public static function render(string $path, array $data = [], ?array &$capturedVars = null): string
     {
         if (self::$engine !== null) {
             return self::$engine->render($path, $data);
@@ -98,7 +99,17 @@ class View
         extract($data, EXTR_SKIP);
         ob_start();
         include $file;
-        return ob_get_clean() ?: '';
+        $output = ob_get_clean() ?: '';
+
+        if ($capturedVars !== null) {
+            $afterVars = get_defined_vars();
+            $internalKeys = array_flip([
+                'path', 'data', 'capturedVars', 'file', 'output', 'afterVars', 'internalKeys',
+            ]);
+            $capturedVars = array_diff_key($afterVars, $internalKeys, $data);
+        }
+
+        return $output;
     }
 
     /**
@@ -127,9 +138,10 @@ class View
             return self::render($path, $data);
         }
 
-        $content = self::render($path, $data);
+        $captured = [];
+        $content = self::render($path, $data, $captured);
 
-        $layoutData = array_merge($data, ['content' => $content]);
+        $layoutData = array_merge($data, ['content' => $content], $captured);
 
         return self::render($layout, $layoutData);
     }

@@ -7,7 +7,7 @@ namespace Antimonial\Core;
 use Antimonial\Http\Request;
 use Antimonial\Http\Response;
 use Antimonial\Routing\Router;
-use Antimonial\Core\ValidationException;
+use Antimonial\View\View;
 use Closure;
 use JsonException;
 use RuntimeException;
@@ -85,10 +85,18 @@ class App
                 fn (Request $req) => $this->dispatchController($handler, $req)
             );
         } catch (HttpNotFoundException $e) {
-            $response = (new Response())
-                ->status(404)
-                ->header('Content-Type', 'text/html; charset=UTF-8')
-                ->body('<h1>404 Not Found</h1>');
+            try {
+                $html = View::renderWithLayout('errors/404', 'layouts/main', []);
+                $response = (new Response())
+                    ->status(404)
+                    ->header('Content-Type', 'text/html; charset=UTF-8')
+                    ->body($html);
+            } catch (\RuntimeException) {
+                $response = (new Response())
+                    ->status(404)
+                    ->header('Content-Type', 'text/html; charset=UTF-8')
+                    ->body('<h1>404 Not Found</h1>');
+            }
         } catch (ValidationException $e) {
             $errors = $e->errors();
 
