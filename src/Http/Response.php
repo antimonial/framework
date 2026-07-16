@@ -129,7 +129,9 @@ class Response
      */
     public function json(mixed $data, int $status = 200): static
     {
-        $this->statusCode = $status;
+        if ($status !== 200) {
+            $this->statusCode = $status;
+        }
         $this->headers['Content-Type'] = 'application/json; charset=UTF-8';
         $this->body = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         return $this;
