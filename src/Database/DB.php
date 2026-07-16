@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Antimonial\Database;
 
+use Antimonial\Core\Config;
 use PDOException;
 
 /**
