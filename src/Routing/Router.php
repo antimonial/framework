@@ -51,9 +51,11 @@ class Router
     private array $paramRoutes = [];
 
     /**
-     * Active group prefix stack.
+     * Active group stack.
      *
-     * @var string[]
+     * Each entry: ['prefix' => string, 'middleware' => class-string[]]
+     *
+     * @var array<int, array{prefix: string, middleware: array<int, class-string>}>
      */
     private array $groupStack = [];
 
@@ -140,20 +142,26 @@ class Router
     }
 
     /**
-     * Define a route group with a common prefix.
+     * Define a route group with a common prefix and optional middleware.
      *
      * @example
      *   $router->group('/api', function (Router $r) {
      *       $r->get('/users', [UserController::class, 'index']);
      *   });
      *
-     * @param string   $prefix   URI prefix (e.g. '/api')
-     * @param callable $callback Receives this Router instance
+     * @example
+     *   $router->group('/admin', function (Router $r) {
+     *       $r->get('/dashboard', [AdminController::class, 'dashboard']);
+     *   }, [AdminMiddleware::class]);
+     *
+     * @param string   $prefix     URI prefix (e.g. '/api')
+     * @param callable $callback   Receives this Router instance
+     * @param string[] $middleware Middleware class names applied to all routes in the group
      * @return void
      */
-    public function group(string $prefix, callable $callback): void
+    public function group(string $prefix, callable $callback, array $middleware = []): void
     {
-        $this->groupStack[] = $prefix;
+        $this->groupStack[] = ['prefix' => $prefix, 'middleware' => $middleware];
         $callback($this);
         array_pop($this->groupStack);
     }
@@ -228,6 +236,13 @@ class Router
         $fullPath = $this->applyGroupPrefix($path);
         $route = new Route($method, $fullPath, $handler);
 
+        // Apply middleware from all active groups
+        foreach ($this->groupStack as $group) {
+            foreach ($group['middleware'] as $mw) {
+                $route->middleware($mw);
+            }
+        }
+
         if (str_contains($fullPath, '{')) {
             $this->paramRoutes[$method][] = $route;
         } else {
@@ -252,7 +267,8 @@ class Router
             return $path;
         }
 
-        $prefix = implode('', $this->groupStack);
+        $prefixes = array_map(fn($g) => $g['prefix'], $this->groupStack);
+        $prefix = implode('', $prefixes);
         return '/' . trim($prefix, '/') . '/' . ltrim($path, '/');
     }
 
@@ -269,8 +285,11 @@ class Router
      */
     private function matchParameters(string $pattern, string $uri): array|false
     {
-        // Convert {param} to named regex groups
-        $regex = preg_replace('#\{(\w+)\}#', '(?P<$1>[^/]+)', $pattern);
+        // Convert {param} or {param:regex} to named regex groups
+        $regex = preg_replace_callback('#\{(\w+)(?::([^}]+))?\}#', function ($m) {
+            $pattern = $m[2] ?? '[^/]+';
+            return '(?P<' . $m[1] . '>' . $pattern . ')';
+        }, $pattern);
         $regex = '#^' . $regex . '$#';
 
         if (preg_match($regex, $uri, $matches)) {
