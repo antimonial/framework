@@ -64,6 +64,12 @@ class App
         $timezone = Config::get('app.timezone', 'UTC');
         date_default_timezone_set($timezone);
 
+        // Opt-in sessions: the framework does not force a session on you.
+        // Enable via app/Config/app.php: ['session' => true].
+        if (Config::get('app.session', false)) {
+            \Antimonial\Session\Session::start();
+        }
+
         $request = Request::fromGlobals();
 
         $this->loadRoutes();

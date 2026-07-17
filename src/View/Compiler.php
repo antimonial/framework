@@ -109,6 +109,9 @@ class Compiler
 
         $inlinePattern = '/@(include|yield|parent|set)\b' . $this->exprPattern() . '/';
 
+        // @csrf: standalone directive (no parentheses), emits a hidden field.
+        $csrfPattern = '/@csrf\b/';
+
         // @php ... @endphp: raw PHP block (no parentheses around the body).
         do {
             $prevPhp = $value;
@@ -155,6 +158,12 @@ class Compiler
                 function ($m) {
                     return $this->compileDirective($m[1], $m[2], '', false);
                 },
+                $value
+            ) ?? $value;
+
+            $value = preg_replace_callback(
+                $csrfPattern,
+                fn () => "<?php echo \\Antimonial\\Security\\Csrf::field(); ?>",
                 $value
             ) ?? $value;
         } while ($value !== $prev);

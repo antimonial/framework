@@ -219,6 +219,60 @@ return [
 ];
 ```
 
+## Sessions & CSRF
+
+Antimonial ships a tiny, dependency-free session + CSRF layer. It is
+**opt-in** — the framework does not start a session for you. Enable it in
+`app/Config/app.php`:
+
+```php
+return [
+    'timezone' => env('APP_TIMEZONE', 'UTC'),
+    'session'  => true,   // start a native PHP session on each request
+];
+```
+
+### Session
+
+A thin wrapper over PHP's native `$_SESSION` (no custom storage backend):
+
+```php
+use Antimonial\Session\Session;
+
+Session::put('user_id', 42);
+$id = Session::get('user_id');          // 42
+$id = Session::pull('user_id');         // 42, then removed
+Session::has('user_id');                // bool
+Session::forget('user_id');
+Session::flash('status', 'Saved!');     // readable on the next request only
+Session::getFlash('status');
+Session::regenerate();                  // new id (call after login)
+```
+
+### CSRF
+
+`Csrf` keeps one token in the session. Render it in forms with the `@csrf`
+view directive, and protect state-changing routes with `CsrfMiddleware`
+(already supported by the Router's global/group middleware).
+
+```php
+// In a template:
+<form method="post">@csrf
+  <input name="name" value="">
+</form>
+
+// Register the middleware (global or per group):
+$router->middleware(Antimonial\Middleware\CsrfMiddleware::class);
+```
+
+The middleware verifies `POST`/`PUT`/`DELETE`/`PATCH` requests against the
+session token (timing-safe `hash_equals`) and returns a `419` on mismatch.
+`GET`/`HEAD`/`OPTIONS` pass through.
+
+> This covers form safety only. Real authentication (login, users, password
+> hashing) is intentionally left to your application — the framework stays
+> "no coupled services".
+
 ## Security
 
 - **Escape output.** The built-in template engine auto-escapes `{{ }}` echos
@@ -244,8 +298,10 @@ return [
   `driver` config key (`mysql`, `pgsql`, `sqlite`); switching drivers is a
   config change, not a code change. Only MySQL is exercised by the skeleton.
 - **No auto-escaping in views** (see Security above).
-- **No ORM, auth, sessions, CSRF, queues or cache** — by design, these are
-  delegated to external services.
+- **No ORM, auth, queues or cache** — by design, these are delegated to
+  external services. A minimal, dependency-free **Session + CSRF** layer
+  *is* included (opt-in, see below) for server-rendered form safety, but
+  full auth is still left to your application.
 - **Single-use query builder.** Terminal methods (`get`, `insert`, `update`,
   `delete`, `count`, …) reset the builder, so create a fresh instance per query.
 
@@ -270,7 +326,9 @@ framework/
 │   ├── Routing/        # Router, Route
 │   ├── Controller/     # Base Controller with validation
 │   ├── View/           # View renderer + built-in template engine (Compiler, ViewEngine, Filters)
-│   ├── Middleware/     # MiddlewareInterface
+│   ├── Middleware/     # MiddlewareInterface, CsrfMiddleware
+│   ├── Session/        # Opt-in native session wrapper (Session)
+│   ├── Security/       # Csrf + TokenMismatchException
 │   ├── Database/       # Connection, QueryBuilder, DB, Raw
 │   └── Model/          # Base Model with CRUD
 ├── composer.json
