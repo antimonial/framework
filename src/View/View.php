@@ -41,14 +41,22 @@ class View
     }
 
     /**
-     * Get the base view directory, with a default fallback.
+     * Get the base view directory.
+     *
+     * The view path must be declared explicitly via setViewPath(); the
+     * framework does not assume a directory. If it was never set, the
+     * caller is told to configure it instead of silently guessing.
      *
      * @return string The view directory path
+     *
+     * @throws RuntimeException If setViewPath() was never called
      */
     private static function getViewPath(): string
     {
         if (self::$viewPath === '') {
-            self::$viewPath = ROOT_PATH.'/app/Views';
+            throw new RuntimeException(
+                'View path not configured. Call View::setViewPath($path) (e.g. from your bootstrap) before rendering views.'
+            );
         }
 
         return self::$viewPath;
