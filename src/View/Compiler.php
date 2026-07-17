@@ -7,13 +7,14 @@ namespace Antimonial\View;
 use RuntimeException;
 
 /**
- * Template-to-PHP compiler (Blade-style, regex-driven).
+ * Template-to-PHP compiler (Blade-style, hybrid tokenizer + regex).
  *
- * One pass over the source: comments -> statements (@directive) ->
- * echos ({{ }} escaped, {{{ }}} raw). No lexer states, no node tree.
- *
- * Output is cached PHP that ViewEngine includes. Auto-escaping is the
- * default; only {{{ }}} and @php emit raw content (developer-trusted).
+ * Uses PHP's own token_get_all() lexer to separate raw HTML from
+ * existing PHP code  — directives inside T_INLINE_HTML segments are
+ * replaced with <?php ?> blocks, while pre-existing PHP passes through
+ * unmodified.  This gives correct nesting of @if/@endif (PHP's parser
+ * handles the nesting) and avoids the regex-pair-matching bugs that
+ * a purely regex approach suffers from.
  *
  * @see ViewEngine
  */
@@ -47,7 +48,6 @@ class Compiler
             mkdir($dir, 0775, true);
         }
 
-        // Atomic write: temp file + rename prevents partial reads
         $tmp = tempnam($dir, 'cmp_');
         if ($tmp === false) {
             throw new RuntimeException("Cannot create temp file in {$dir}");
@@ -68,233 +68,219 @@ class Compiler
 
     /**
      * Compile a template string into PHP.
+     *
+     * Two-phase approach:
+     *   1. Strip @comments.
+     *   2. Tokenize with token_get_all() — PHP tokens pass through,
+     *      T_INLINE_HTML segments are compiled (directives → PHP).
      */
     public function compileString(string $value): string
     {
-        // 1. Strip comments
         $value = preg_replace('/{{--.*?--}}/s', '', $value) ?? $value;
 
-        // 2. Statements (@if, @foreach, @extends, ...)
-        $value = $this->compileStatements($value);
+        $result = '';
 
-        // 3. Echos (raw first, then escaped)
-        $value = $this->compileEchos($value);
+        foreach (token_get_all($value) as $token) {
+            if (is_array($token) && $token[0] === T_INLINE_HTML) {
+                $result .= $this->compileHtml($token[1]);
+            } else {
+                $result .= is_array($token) ? $token[1] : $token;
+            }
+        }
 
-        return $value;
+        return $result;
     }
 
-    // ─── Statements ────────────────────────────────────────────
+    // ─── HTML compilation (directives → PHP) ───────────────────
 
     /**
-     * Resolve @directive(...) blocks.
-     *
-     * The expression inside (...) is captured as a whole (balanced enough
-     * for typical templates), so the emitted PHP is valid. Paired blocks
-     * (@if ... @else ... @endif) are matched up to their closer.
+     * Replace Blade-style @directives inside a raw-HTML segment with
+     * <?php ?> blocks.  Each directive is handled independently — no
+     * paired-block matching is needed because PHP's own parser will
+     * resolve nesting (if/endif, foreach/endforeach, etc.) at runtime.
      */
-    private function compileStatements(string $value): string
+    private function compileHtml(string $html): string
     {
-        // Move @extends to the footer (like Blade), returning '' inline.
-        // The child body (free content + @section blocks) is evaluated first;
-        // evaluate() then renders the layout with the captured content.
         $footer = '';
 
-        $value = preg_replace_callback(
-            '/^[ \t]*@extends'.$this->exprPattern().'/',
+        // 1. @extends — move to footer (like Blade)
+        $html = preg_replace_callback(
+            '/^[ \t]*@extends'.$this->exprPattern().'/m',
             function ($m) use (&$footer) {
                 $footer .= "<?php \$__engine->beginExtend({$m[1]}); ?>\n";
 
                 return '';
             },
-            $value
-        ) ?? $value;
+            $html
+        ) ?? $html;
 
-        // Paired blocks: @name(expr) ... @endname. The body is re-compiled
-        // (recursion) so nested blocks resolve. Following Blade's approach,
-        // @else / @elseif / @endif are handled as ATOMIC directives below
-        // (not post-processed inside the body), which is robust regardless
-        // of where they appear on the line.
-        $pairPattern = '/@(if|unless|foreach|for|while|switch|isset|empty|section)\b'
-            .$this->exprPattern().'([\s\S]*?)@end\1/s';
-
-        // Standalone (atomic) directives handled in the same iteration:
-        // @elseif(expr), @else, @endif, @endunless, @endisset, @endempty.
-        // @elseif carries its own (expr) and gets a dedicated pattern to
-        // avoid PCRE group-numbering conflicts when exprPattern recurses.
-        $elseifPattern = '/@elseif'.$this->exprPattern().'/';
-        $atomicPattern = '/@(else|endif|endunless|endisset|endempty)\b/';
-
-        $inlinePattern = '/@(include|yield|parent|set)\b'.$this->exprPattern().'/';
-
-        // @csrf: standalone directive (no parentheses), emits a hidden field.
-        $casePattern = '/@case'.$this->exprPattern().'/';
-        $defaultPattern = '/@default\b/';
-        $breakPattern = '/@break\b/';
-
-        $csrfPattern = '/@csrf\b/';
-
-        // @php ... @endphp: raw PHP block (no parentheses around the body).
+        // 2. @php … @endphp — raw PHP blocks
         do {
-            $prevPhp = $value;
-            $value = preg_replace_callback(
+            $prev = $html;
+            $html = preg_replace_callback(
                 '/@php\b([\s\S]*?)@endphp/s',
                 fn ($m) => '<?php '.trim($m[1]).' ?>',
-                $value
-            ) ?? $value;
-        } while ($value !== $prevPhp);
+                $html
+            ) ?? $html;
+        } while ($html !== $prev);
 
-        // Iterate until stable. preg_replace is not nested, so the innermost
-        // blocks resolve first; repeated passes unwrap parents (@if/@foreach).
-        // Atomic directives (@else etc.) are replaced alongside paired ones.
+        // 3. Standalone atomic directives that open or close blocks.
+        //    Each is compiled independently — PHP resolves nesting.
+        //
+        // Order matters: longer matches first (e.g. @elseif before @else).
+        $atomic = [
+            // Openers (paired — emit opening PHP + record on stack for @end)
+            '/@(if|unless|foreach|for|while|switch|isset|empty|section)\b'.$this->exprPattern().'/' => function ($m) {
+                return $this->openBlock($m[1], $m[2]);
+            },
+            '/@elseif'.$this->exprPattern().'/' => fn ($m) => "<?php elseif{$m[1]}: ?>",
+            '/@else\b(?!if)/'                                  => fn ()   => '<?php else: ?>',
+            // Switch case/default — MUST be before closers so @case/@default
+            // run before @endswitch pops the switchStack.
+            '/@case'.$this->exprPattern().'/'     => function ($m) {
+                $val = substr($m[1], 1, -1);
+                if (! empty($this->switchStack)) {
+                    $idx = array_key_last($this->switchStack);
+                    $sw = $this->switchStack[$idx];
+                    $keyword = $sw['firstCase'] ? 'if' : 'elseif';
+                    $this->switchStack[$idx]['firstCase'] = false;
+                    return "<?php {$keyword} ({$sw['expr']} === {$val}): ?>\n";
+                }
+                return "<?php case {$val}: ?>\n";
+            },
+            '/@default\b/'                        => fn ()   => ! empty($this->switchStack) ? "<?php else: ?>\n" : "<?php default: ?>\n",
+            '/@break\b/'                          => fn ()   => "<?php break; ?>\n",
+            // Atomic closers — explicit named closer first, then @end as universal.
+            // These run AFTER @case/@default so the switchStack is still populated.
+            '/@(endif|endunless|endisset|endempty|endforeach|endfor|endwhile|endswitch|endsection)\b/' => function ($m) {
+                return $this->closeBlock($m[1]);
+            },
+            // Universal closer: @end closes whatever block was most recently opened
+            '/@end\b(?!if|unless|isset|empty|foreach|for|while|switch|section)/' => function () {
+                $type = array_pop($this->blockStack);
+                if ($type === null) {
+                    return '';
+                }
+                $php = match ($type) {
+                    'if', 'unless', 'isset', 'empty' => '<?php endif; ?>',
+                    'switch' => $this->closeSwitch(),
+                    'section' => '<?php $__engine->endSection(); ?>',
+                    default => "<?php end{$type}; ?>",
+                };
+                return $php;
+            },
+            // Inline helpers
+            '/@include'.$this->exprPattern().'/'  => fn ($m) => "<?php echo \$__engine->include{$m[1]}; ?>",
+            '/@yield'.$this->exprPattern().'/'    => fn ($m) => "<?php echo \$__engine->yield{$m[1]}; ?>",
+            '/@parent\b'.$this->exprPattern().'/' => fn ()   => '<?php echo $__engine->parent(); ?>',
+            '/@set'.$this->exprPattern().'/'      => fn ($m) => $this->compileSet($m[1]),
+            '/@csrf\b/'                           => fn ()   => '<?php echo \\Antimonial\\Security\\Csrf::field(); ?>',
+        ];
+
         do {
-            $prev = $value;
+            $prev = $html;
 
-            $value = preg_replace_callback(
-                $pairPattern,
-                function ($m) {
-                    $inner = $this->compileStatements($m[3]);
+            foreach ($atomic as $pattern => $callback) {
+                $html = preg_replace_callback($pattern, $callback, $html) ?? $html;
+            }
+        } while ($html !== $prev);
 
-                    return $this->compileDirective($m[1], $m[2], $inner, true);
-                },
-                $value
-            ) ?? $value;
+        // 4. Echos (raw first, then escaped)
+        $html = $this->compileEchos($html);
 
-            $value = preg_replace_callback(
-                $elseifPattern,
-                function ($m) {
-                    return $this->compileAtomic('elseif'.$m[1]);
-                },
-                $value
-            ) ?? $value;
-
-            $value = preg_replace_callback(
-                $atomicPattern,
-                function ($m) {
-                    return $this->compileAtomic($m[1]);
-                },
-                $value
-            ) ?? $value;
-
-            $value = preg_replace_callback(
-                $inlinePattern,
-                function ($m) {
-                    return $this->compileDirective($m[1], $m[2], '', false);
-                },
-                $value
-            ) ?? $value;
-
-            $value = preg_replace_callback(
-                $casePattern,
-                fn ($m) => '<?php case '.substr($m[1], 1, -1).": ?>\n",
-                $value
-            ) ?? $value;
-
-            $value = preg_replace_callback(
-                $defaultPattern,
-                fn () => "<?php default: ?>\n",
-                $value
-            ) ?? $value;
-
-            $value = preg_replace_callback(
-                $breakPattern,
-                fn () => "<?php break; ?>\n",
-                $value
-            ) ?? $value;
-
-            $value = preg_replace_callback(
-                $csrfPattern,
-                fn () => '<?php echo \\Antimonial\\Security\\Csrf::field(); ?>',
-                $value
-            ) ?? $value;
-        } while ($value !== $prev);
-
-        return $footer.$value;
+        return $footer.$html;
     }
 
-    /**
-     * Regex fragment matching a balanced-parenthesis expression: ( ... ).
-     *
-     * Uses a relative recursion (?-1) so the subpattern references itself
-     * (the nearest preceding capturing group) rather than group 1 of the
-     * full pattern (which is the directive name). This lets
-     * "if ($a > count($b))" capture intact.
-     */
-    private function exprPattern(): string
-    {
-        return '(\((?:[^()]+|(?-1))*\))';
-    }
+    // ─── Block open / close helpers ────────────────────────────
 
     /**
-     * Compile an atomic (standalone) directive: @else, @elseif(expr),
-     *
-     * @endif, @endunless, @endisset, @endempty.
-     *
-     * These are replaced in the iteration loop (Blade-style) rather than
-     * post-processed inside a parent block, so their position on the line
-     * does not matter.
-     *
-     * @param  string  $token  The matched directive text (e.g. "elseif($x)")
+     * @var list<string> Stack of open block types — used only by @end
+     *                   to resolve the nearest open block.
      */
-    private function compileAtomic(string $token): string
-    {
-        if (str_starts_with($token, 'elseif')) {
-            preg_match('/^elseif'.$this->exprPattern().'$/', $token, $m);
-
-            return "<?php elseif{$m[1]}: ?>";
-        }
-
-        return match ($token) {
-            'else' => '<?php else: ?>',
-            'endif' => '<?php endif; ?>',
-            'endunless' => '<?php endif; ?>',
-            'endisset' => '<?php endif; ?>',
-            'endempty' => '<?php endif; ?>',
-            default => '',
-        };
-    }
+    private array $blockStack = [];
 
     /**
-     * Map a directive name + expression to PHP.
-     *
-     * @param  string  $name  Directive name (if, foreach, include, ...)
-     * @param  string  $expr  The parenthesized expression, e.g. "($users as $u)"
-     * @param  string  $inner  Body between open and @end (for paired directives)
-     * @param  bool  $paired  Whether this directive has an @end<name> closer
+     * Emit PHP for a block-opening directive and push its type.
      */
-    private function compileDirective(string $name, string $expr, string $inner, bool $paired): string
+    private function openBlock(string $type, string $expr): string
     {
-        $open = match ($name) {
-            'if' => "<?php if{$expr}: ?>",
-            'unless' => "<?php if (!( {$expr} )): ?>",
-            'foreach' => "<?php foreach{$expr}: ?>",
-            'for' => "<?php for{$expr}: ?>",
-            'while' => "<?php while{$expr}: ?>",
-            'switch' => "<?php switch{$expr}: ?>",
-            'isset' => "<?php if (isset{$expr}): ?>",
-            'empty' => "<?php if (empty{$expr}): ?>",
+        // Resolve |filter chains inside the expression
+        $compiledExpr = $this->compileExpr($expr);
+
+        $php = match ($type) {
+            'if'      => "<?php if{$compiledExpr}: ?>",
+            'unless'  => "<?php if (!( {$compiledExpr} )): ?>",
+            'foreach' => "<?php foreach{$compiledExpr}: ?>",
+            'for'     => "<?php for{$compiledExpr}: ?>",
+            'while'   => "<?php while{$compiledExpr}: ?>",
+            'switch'  => $this->openSwitch($compiledExpr),
+            'isset'   => "<?php if (isset{$compiledExpr}): ?>",
+            'empty'   => "<?php if (empty{$compiledExpr}): ?>",
             'section' => "<?php \$__engine->section{$expr}; ?>",
-            'include' => "<?php echo \$__engine->include{$expr}; ?>",
-            'yield' => "<?php echo \$__engine->yield{$expr}; ?>",
-            'parent' => '<?php echo $__engine->parent(); ?>',
-            'set' => $this->compileSet($expr),
-            'php' => '<?php '.trim($expr, '()').' ?>',
-            default => '',
+            default   => '',
         };
 
-        if (! $paired) {
-            return $open;
+        $this->blockStack[] = $type;
+
+        return $php;
+    }
+
+    /**
+     * Emit PHP for a standard @end<type> closer and pop the stack.
+     */
+    private function closeBlock(string $type): string
+    {
+        // Strip leading "end" → e.g. "endif" → "if"
+        $openType = substr($type, 3);
+
+        array_pop($this->blockStack);
+
+        $php = match ($openType) {
+            'if', 'unless', 'isset', 'empty' => '<?php endif; ?>',
+            'switch' => $this->closeSwitch(),
+            'section' => '<?php $__engine->endSection(); ?>',
+            default => "<?php end{$openType}; ?>",
+        };
+
+        // Also handle "endsection" as section close
+        if ($type === 'endsection') {
+            return '<?php $__engine->endSection(); ?>';
         }
 
-        $close = match ($name) {
-            'section' => '<?php $__engine->endSection(); ?>',
-            'unless' => '<?php endif; ?>',
-            'isset' => '<?php endif; ?>',
-            'empty' => '<?php endif; ?>',
-            'php' => '<?php endif; ?>',
-            default => '<?php end'.$name.'; ?>',
-        };
+        return $php;
+    }
 
-        return $open.$inner.$close;
+    // ─── Switch helpers ────────────────────────────────────────
+
+    /**
+     * @var list<array{expr: string, firstCase: bool}> Stack of switch
+     *      state for rewriting @case/@default to if/elseif/else
+     */
+    private array $switchStack = [];
+
+    /**
+     * Open a @switch block — we rewrite @case/@default to @if/elseif
+     * because PHP does not allow T_INLINE_HTML inside a switch/case
+     * alternative-syntax block.
+     */
+    private function openSwitch(string $expr): string
+    {
+        $this->switchStack[] = [
+            'expr'      => trim($expr, '()'),
+            'firstCase' => true,
+        ];
+
+        return '';
+    }
+
+    /**
+     * Close the current @switch block (rewritten).
+     */
+    private function closeSwitch(): string
+    {
+        array_pop($this->switchStack);
+
+        return '<?php endif; ?>';
     }
 
     /**
@@ -302,13 +288,53 @@ class Compiler
      */
     private function compileSet(string $body): string
     {
-        // Strip wrapping parentheses if present: @set($x = 1) or @set($x = 1)
         $body = trim($body);
         if (str_starts_with($body, '(') && str_ends_with($body, ')')) {
             $body = substr($body, 1, -1);
         }
 
         return "<?php {$body}; ?>";
+    }
+
+    // ─── Expression compilation (filter pipes) ─────────────────
+
+    /**
+     * Resolve |filter chains inside a parenthesised expression.
+     *
+     * Transforms  ($x|length > 0)  →  (Filters::apply($x, 'length') > 0)
+     * so that filters work in @if, @for, etc.
+     */
+    private function compileExpr(string $expr): string
+    {
+        return preg_replace_callback(
+            '/(\$[a-zA-Z_]\w*)((?:\|\w+(?::(?:[^()|]+|(?-1))*)?)+)/',
+            function ($m) {
+                $var = $m[1];
+                $filters = [];
+                preg_match_all('/\|(\w+)(?::((?:[^()|]+|(?-1))*))?/', $m[2], $matches, PREG_SET_ORDER);
+                foreach ($matches as $fm) {
+                    $name = $fm[1];
+                    $args = $fm[2] ?? null;
+                    if ($args !== null) {
+                        $filters[] = $name . ':' . $args;
+                    } else {
+                        $filters[] = $name;
+                    }
+                }
+                return "\\Antimonial\\View\\Filters::apply({$var}, " . var_export($filters, true) . ")";
+            },
+            $expr
+        ) ?? $expr;
+    }
+
+    // ─── Switch rewriting in compileHtml ───────────────────────
+
+    /**
+     * Regex pattern for matching a parenthesised expression.
+     */
+    private function exprPattern(): string
+    {
+        return '(\((?:[^()]+|(?-1))*\))';
     }
 
     // ─── Echos ─────────────────────────────────────────────────
