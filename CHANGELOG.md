@@ -5,6 +5,16 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-07-17
+
+### Changed
+
+- **`View` no longer assumes a view directory.** Removed the silent fallback to `ROOT_PATH.'/app/Views'`. If `View::setViewPath()` was never called, rendering now throws `RuntimeException` telling you to configure it. This removes the last implicit directory convention in the backend — you declare paths instead of the framework guessing them (consistent with the explicit `$table` requirement on models).
+
+### BREAKING CHANGE
+
+- Applications must call `View::setViewPath($path)` before rendering. The skeleton already does this in `public/index.php`; existing apps need to add that one call in their bootstrap.
+
 ## [0.10.0] - 2026-07-17
 
 ### Changed
