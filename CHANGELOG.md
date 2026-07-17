@@ -5,13 +5,9 @@ All notable changes to the Antimonial framework are documented here.
 ## [0.9.2] - 2026-07-17
 
 ### Added
-- **Static model access** — `__callStatic` enables expressive `User::find(42)`, `User::all()`, `User::where('active', true)->orderBy('name')->get()` syntax. Instance API fully preserved.
 - **`Router::patch()`** — HTTP PATCH verb method on Router
 - **`Response::download()`** — Stream a file as an attachment (sets Content-Disposition, MIME, Content-Length)
 - **`Response::file()`** — Serve a file inline with detected MIME type
-
-### Changed
-- **Model docblock** — Updated all examples to use static syntax; added `@method` tags for static analysis
 
 ### Removed
 - **`toSql()` from QueryBuilder** — The method was a duplicate of `getSql()`. Canonical name is now `getSql()`.
