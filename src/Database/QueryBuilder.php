@@ -383,6 +383,13 @@ class QueryBuilder
         return $this;
     }
 
+    public function orWhereRaw(string $sql, array $bindings = []): static
+    {
+        $this->wheres[] = ['logic' => 'OR', 'sql' => $sql, 'bindings' => $bindings];
+
+        return $this;
+    }
+
     /**
      * Add a JOIN clause.
      *

@@ -94,14 +94,15 @@ class Config
     private static function dotGet(array $array, string $key, mixed $default): mixed
     {
         $keys = explode('.', $key);
+        $value = $array;
 
         foreach ($keys as $k) {
-            if (! array_key_exists($k, $array)) {
+            if (! is_array($value) || ! array_key_exists($k, $value)) {
                 return $default;
             }
-            $array = (array) $array[$k];
+            $value = $value[$k];
         }
 
-        return $array;
+        return $value;
     }
 }

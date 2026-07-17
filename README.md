@@ -86,12 +86,15 @@ The layout receives `$content` with the inner view's output.
 
 ### Template Engine
 
-Antimonial ships with a small built-in template engine (inspired by Blade/Twig
-but ~200 lines). It is auto-registered on first render — no setup required.
+Antimonial ships with a small built-in template engine (inspired by Blade/Twig).
+It is auto-registered on first render — no setup required.
 Templates are plain `.php` files in `app/Views/` that compile to cached PHP.
 
 **Auto-escaping by default.** `{{ }}` escapes output (XSS-safe); `{{{ }}}`
 emits raw, trusted HTML.
+
+**Filters work in directives too** — `@if($posts|length > 0)` compiles
+correctly by resolving the pipe chain to `Filters::apply($posts, ['length'])`.
 
 ```php
 {{-- comment --}}
@@ -108,6 +111,13 @@ emits raw, trusted HTML.
   <p>None</p>
 @endif
 
+{{-- Nesting is safe: each @if is independent, PHP handles the nesting --}}
+@if(!empty($items))
+  @foreach($items as $item)
+    @if($item->active) ✅ @else ❌ @endif
+  @endforeach
+@endif
+
 @unless($active)
   <p>Inactive</p>
 @endunless
@@ -116,7 +126,7 @@ emits raw, trusted HTML.
   <li>{{ $user['name'] }} ({{ $user['name']|length }} chars)</li>
 @endforeach
 
-@for($i = 0; $i < 10; $i++)
+@for($i = 0; $i < $items|count; $i++)
   <span>{{ $i }}</span>
 @endfor
 
@@ -132,11 +142,23 @@ emits raw, trusted HTML.
   <p>Your cart is empty.</p>
 @endempty
 
+@switch($status)
+  @case('active')   <span class="ok">Active</span>
+  @case('pending')  <span class="warn">Pending</span>
+  @default          <span class="muted">{{ $status }}</span>
+@endswitch
+
 @set($total = count($users))   {{-- @set($var = expr) --}}
 @php echo time(); @endphp      {{-- raw PHP block --}}
 
 @include('partials/nav')        {{-- inherits parent variables --}}
 @include('item', ['id' => 1])   {{-- with explicit data --}}
+
+{{-- @end closes the most recently opened block --}}
+@if($x) ... @end
+
+{{-- @csrf emits a hidden CSRF token field --}}
+@csrf
 ```
 
 **Layouts (inheritance):**
