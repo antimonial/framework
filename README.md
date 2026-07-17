@@ -208,7 +208,16 @@ $users = DB::table('users')
     ->get();
 
 $count = DB::table('users')->where('role', 'admin')->count();
+
+// Paginate — returns {items, total, perPage, currentPage, totalPages}
+$result = DB::table('posts')
+    ->where('status', 'published')
+    ->orderBy('created_at', 'DESC')
+    ->paginate(10, $page);
+// $result->items, $result->total, $result->totalPages
 ```
+
+Named routes are available too — see [Routing](#routing) below.
 
 ### Config
 
@@ -238,6 +247,40 @@ return [
         ],
     ],
 ];
+```
+
+## Routing
+
+### Named routes
+
+Routes can be named for reverse URL generation. The global `route()` helper
+resolves a name + parameters into the actual URL path:
+
+```php
+$router->get('/posts/{slug}', [PostController::class, 'show'])->name('posts.show');
+
+// Generate a URL:
+$url = route('posts.show', ['slug' => 'hello-world']);   // /posts/hello-world
+```
+
+Use `route()` in views or controllers — if the route path ever changes, all
+references update automatically.
+
+### Groups
+
+Group routes under a common prefix and middleware:
+
+```php
+$router->group('/admin', function () {
+    $router->get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    $router->get('/posts', [AdminController::class, 'posts'])->name('admin.posts');
+}, ['App\Middleware\AuthMiddleware']);
+```
+
+### Global middleware
+
+```php
+$router->addMiddleware(App\Middleware\CsrfMiddleware::class);
 ```
 
 ## Sessions & CSRF
@@ -303,8 +346,9 @@ session token (timing-safe `hash_equals`) and returns a `419` on mismatch.
   ```php
   <?= e($user->name) ?>
   ```
-- **Validation.** Controller `validate()` returns a `422` response (JSON with
-  an `errors` object) when rules fail.
+- **Validation.** Controller `validate()` returns only the fields that have
+  rules (filtered input). On failure it throws a `422` response (JSON with
+  an `errors` object).
 - **SQL identifiers.** Column/table names passed to `where()`, `orWhere()`,
   `join()`, `orderBy()`, `groupBy()`, `having()` and `increment()`/`decrement()`
   are validated against a strict whitelist (`^[a-zA-Z_][a-zA-Z0-9_]*`,

@@ -383,6 +383,15 @@ class QueryBuilder
         return $this;
     }
 
+    /**
+     * Add a raw WHERE clause with OR logic.
+     *
+     * @example $query->orWhereRaw('age > ? OR role = ?', [18, 'admin']);
+     *
+     * @param  string  $sql  Raw SQL fragment (e.g. 'age > ? OR role = ?')
+     * @param  array<int, mixed>  $bindings  Values for ? placeholders
+     * @return $this
+     */
     public function orWhereRaw(string $sql, array $bindings = []): static
     {
         $this->wheres[] = ['logic' => 'OR', 'sql' => $sql, 'bindings' => $bindings];

@@ -2,6 +2,23 @@
 
 All notable changes to the Antimonial framework are documented here.
 
+## [0.9.0] - 2026-07-17
+
+### Added
+- **Test suite expanded from 27 to 166 tests** — 7 new test files:
+  - `QueryBuilderTest` (~40 tests): SQL compilation, where/join/order/group/limit, aggregates, paginate, security, reset
+  - `RouterTest` (~25 tests): registration, exact/parameterized dispatch, regex constraints, groups, named routes, middleware
+  - `RequestTest` (~15 tests): URI, method, query/post/input/header/cookie/file, attributes, method override
+  - `ResponseTest` (~12 tests): status, headers, body, json, redirect, fluent API
+  - `ConfigTest` (~6 tests): load, get, dot notation nested, default values, missing file
+  - `HelpersTest` (~8 tests): `e()`, `env()` type-casting, `redirect()`
+  - `ModelTest` (~11 tests): table name guessing, find/all/insert/update/delete, timestamps, query builder delegation
+
+### Documentation
+- Added docblock to `orWhereRaw()` (only public method missing one)
+- README updated with: paginate(), named routes, Routing section, validate() return behavior
+- Skeleton README updated with named routes mention
+
 ## [0.8.1] - 2026-07-17
 
 ### Fixed
