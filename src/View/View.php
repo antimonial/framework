@@ -25,32 +25,16 @@ use RuntimeException;
  */
 class View
 {
-    /**
-     * @var string Base directory for view files
-     */
     private static string $viewPath = '';
 
-    /**
-     * @var ViewEngine|null The built-in template engine (created on setViewPath)
-     */
     private static ?ViewEngine $engine = null;
 
-    /**
-     * Set the base directory for view files and build the engine.
-     *
-     * @param  string  $path  Absolute path to the Views directory
-     */
     public static function setViewPath(string $path): void
     {
         self::$viewPath = rtrim($path, '/');
         self::$engine = new ViewEngine(self::$viewPath);
     }
 
-    /**
-     * Get the base directory for view files.
-     *
-     * Defaults to ROOT_PATH/app/Views if not explicitly set.
-     */
     private static function getViewPath(): string
     {
         if (self::$viewPath === '') {
@@ -60,50 +44,20 @@ class View
         return self::$viewPath;
     }
 
-    /**
-     * Render a view file with data using the built-in template engine.
-     *
-     * @example View::render('users/index', ['users' => $users]);
-     *
-     * @param  string  $path  View path relative to the Views directory (e.g. 'users/index')
-     * @param  array<string, mixed>  $data  Variables to make available in the view
-     * @param  array<string, mixed>|null  &$capturedVars  If set, receives any extra variables defined by the view
-     * @return string Rendered HTML
-     *
-     * @throws RuntimeException If the view file does not exist
-     *
-     * @see renderWithLayout()
-     */
-    public static function render(string $path, array $data = [], ?array $capturedVars = null): string
+    private static function engine(): ViewEngine
     {
         if (self::$engine === null) {
             self::$engine = new ViewEngine(self::getViewPath());
         }
 
-        return self::$engine->render($path, $data);
+        return self::$engine;
     }
 
-    /**
-     * Render a view inside an optional layout.
-     *
-     * When a layout is provided:
-     *  1. The inner view is rendered first
-     *  2. The layout is rendered with $content (the inner view's output)
-     *     and all original data variables available
-     *
-     * @note The layout receives the inner view's output as `$content`. Do not
-     *       name a view variable `content`, as it would be overwritten.
-     *
-     * @example View::renderWithLayout('users/index', 'layouts/main', ['users' => $users]);
-     *
-     * @param  string  $path  View path
-     * @param  string|null  $layout  Layout path (null = no layout)
-     * @param  array<string, mixed>  $data  Variables for the view
-     *
-     * @throws RuntimeException If the view file does not exist
-     *
-     * @see render()
-     */
+    public static function render(string $path, array $data = [], ?array &$capturedVars = null): string
+    {
+        return self::engine()->render($path, $data);
+    }
+
     public static function renderWithLayout(string $path, ?string $layout, array $data = []): string
     {
         if ($layout === null) {

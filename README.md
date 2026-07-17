@@ -193,8 +193,7 @@ use Antimonial\View\Filters;
 Filters::add('slug', fn ($v) => strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', $v))));
 ```
 
-> The engine caches compiled templates in `app/storage/views/`. Force native
-> PHP rendering with `View::setEngine(null)`.
+> The engine caches compiled templates in `app/storage/views/`.
 
 ### Query Builder
 
@@ -299,7 +298,7 @@ session token (timing-safe `hash_equals`) and returns a `419` on mismatch.
 
 - **Escape output.** The built-in template engine auto-escapes `{{ }}` echos
   (XSS-safe) and only `{{{ }}}` emits raw, trusted HTML. When writing native
-  PHP views (or using `View::setEngine(null)`), output is *not* auto-escaped —
+  PHP views output is *not* auto-escaped —
   always escape user-facing data with the `e()` helper:
   ```php
   <?= e($user->name) ?>
