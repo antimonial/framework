@@ -2,7 +2,14 @@
 
 All notable changes to the Antimonial framework are documented here.
 
+## [0.9.4] - 2026-07-17
+
+### Fixed
+- **Packagist publishing** — removed the hardcoded `"version": "0.9.0"` field from `composer.json`. That field caused Packagist to skip tags `v0.9.1`/`v0.9.2`/`v0.9.3` (their `composer.json` carried the stale `0.9.0` version, so Composer ignored them). Tags are never recreated; this `v0.9.4` is the first release published with a clean `composer.json`.
+
 ## [0.9.3] - 2026-07-17
+
+> Note: tags `v0.9.1`, `v0.9.2` and `v0.9.3` exist in git but are **not available on Packagist** due to the `composer.json` version mismatch described in `v0.9.4`. Use `v0.9.4` or later.
 
 ### Changed
 - **PHPStan analysis now passes at `--level=max` with zero `@phpstan-ignore` comments** — all 25 errors and 4 ignores eliminated through proper type fixes:
