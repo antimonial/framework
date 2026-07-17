@@ -6,7 +6,6 @@ namespace Antimonial\Routing;
 
 use Antimonial\Core\App;
 use Antimonial\Core\ErrorHandler;
-use Antimonial\Routing\HttpNotFoundException;
 use Antimonial\Http\Request;
 use Antimonial\Middleware\MiddlewareInterface;
 use Closure;
@@ -109,6 +108,20 @@ class Router
     public function put(string $path, Closure|array $handler): Route
     {
         return $this->addRoute('PUT', $path, $handler);
+    }
+
+    /**
+     * Register a PATCH route.
+     *
+     * @example $router->patch('/users/{id}', [UserController::class, 'update']);
+     *
+     * @param  string  $path  URI pattern
+     * @param  Closure|array{0: class-string, 1: string}  $handler
+     * @return Route The registered Route instance
+     */
+    public function patch(string $path, Closure|array $handler): Route
+    {
+        return $this->addRoute('PATCH', $path, $handler);
     }
 
     /**

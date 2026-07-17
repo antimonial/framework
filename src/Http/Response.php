@@ -139,6 +139,89 @@ class Response
     }
 
     /**
+     * Serve a file for download (Content-Disposition: attachment).
+     *
+     * @example return (new Response())->download('storage/report.pdf');
+     *
+     * @param  string  $path  Absolute or relative path to the file
+     * @param  string|null  $name  Override the download filename
+     *
+     * @throws \RuntimeException If the file does not exist or is unreadable
+     */
+    public function download(string $path, ?string $name = null): static
+    {
+        if (! file_exists($path) || ! is_readable($path)) {
+            throw new \RuntimeException("File not found or unreadable: {$path}");
+        }
+
+        $name ??= basename($path);
+        $this->headers['Content-Type'] = $this->detectMimeType($path);
+        $this->headers['Content-Disposition'] = 'attachment; filename="'.addcslashes($name, '"\\').'"';
+        $this->headers['Content-Length'] = (string) filesize($path);
+        $this->body = $this->loadFile($path);
+
+        return $this;
+    }
+
+    /**
+     * Serve a file inline with its MIME type.
+     *
+     * @example return (new Response())->file('storage/image.png');
+     *
+     * @param  string  $path  Absolute or relative path to the file
+     *
+     * @throws \RuntimeException If the file does not exist or is unreadable
+     */
+    public function file(string $path): static
+    {
+        if (! file_exists($path) || ! is_readable($path)) {
+            throw new \RuntimeException("File not found or unreadable: {$path}");
+        }
+
+        $this->headers['Content-Type'] = $this->detectMimeType($path);
+        $this->headers['Content-Length'] = (string) filesize($path);
+        $this->body = $this->loadFile($path);
+
+        return $this;
+    }
+
+    /**
+     * Read a file's contents into a string.
+     *
+     * @throws \RuntimeException If the read fails
+     */
+    private function loadFile(string $path): string
+    {
+        $contents = file_get_contents($path);
+
+        if ($contents === false) {
+            throw new \RuntimeException("Failed to read file: {$path}");
+        }
+
+        return $contents;
+    }
+
+    /**
+     * Detect the MIME type of a file.
+     *
+     * @param  string  $path  Absolute path to the file
+     * @return string Detected MIME type, or 'application/octet-stream' as fallback
+     */
+    private function detectMimeType(string $path): string
+    {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+
+        if ($finfo === false) {
+            return 'application/octet-stream';
+        }
+
+        $mime = finfo_file($finfo, $path);
+        finfo_close($finfo);
+
+        return $mime !== false ? $mime : 'application/octet-stream';
+    }
+
+    /**
      * Set a redirect response.
      *
      * @example return (new Response())->redirect('/login', 302);

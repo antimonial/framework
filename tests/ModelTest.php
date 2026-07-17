@@ -151,6 +151,6 @@ final class ModelTest extends TestCase
 
         $qb = $model->query();
         $this->assertInstanceOf(QueryBuilder::class, $qb);
-        $this->assertStringContainsString('SELECT', $qb->toSql());
+        $this->assertStringContainsString('SELECT', $qb->getSql());
     }
 }

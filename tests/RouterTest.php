@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Antimonial\Tests;
 
-use Antimonial\Routing\HttpNotFoundException;
 use Antimonial\Http\Request;
+use Antimonial\Routing\HttpNotFoundException;
 use Antimonial\Routing\Route;
 use Antimonial\Routing\Router;
 use PHPUnit\Framework\TestCase;

@@ -898,22 +898,10 @@ class QueryBuilder
      * Useful for debugging and logging.
      *
      * @return string The compiled SELECT SQL query
-     *
-     * @see getSql()
-     */
-    public function toSql(): string
-    {
-        return $this->compileSelect();
-    }
-
-    /**
-     * Alias of toSql() for backwards compatibility.
-     *
-     * @see toSql()
      */
     public function getSql(): string
     {
-        return $this->toSql();
+        return $this->compileSelect();
     }
 
     // ─── SQL Compilation (Private) ──────────────────────────────

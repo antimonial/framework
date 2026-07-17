@@ -24,7 +24,7 @@ class Compiler
      * Compiler version — bump this whenever the compilation logic changes
      * to force recompilation of all cached views.
      */
-    public const VERSION = '0.9.1';
+    public const VERSION = '0.9.2';
 
     /**
      * Compile a template file to a PHP file.

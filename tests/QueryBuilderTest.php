@@ -24,73 +24,73 @@ final class QueryBuilderTest extends TestCase
 
     public function test_basic_select(): void
     {
-        $this->assertSame('SELECT * FROM users', $this->qb()->toSql());
+        $this->assertSame('SELECT * FROM users', $this->qb()->getSql());
     }
 
     public function test_select_columns(): void
     {
         $qb = $this->qb()->select('id', 'name', 'email');
-        $this->assertSame('SELECT id, name, email FROM users', $qb->toSql());
+        $this->assertSame('SELECT id, name, email FROM users', $qb->getSql());
     }
 
     public function test_distinct(): void
     {
         $qb = $this->qb()->distinct()->select('role');
-        $this->assertSame('SELECT DISTINCT role FROM users', $qb->toSql());
+        $this->assertSame('SELECT DISTINCT role FROM users', $qb->getSql());
     }
 
     public function test_where_implicit_equals(): void
     {
         $qb = $this->qb()->where('name', 'John');
-        $this->assertSame('SELECT * FROM users WHERE name = ?', $qb->toSql());
+        $this->assertSame('SELECT * FROM users WHERE name = ?', $qb->getSql());
     }
 
     public function test_where_explicit_operator(): void
     {
         $qb = $this->qb()->where('age', '>', 18);
-        $this->assertSame('SELECT * FROM users WHERE age > ?', $qb->toSql());
+        $this->assertSame('SELECT * FROM users WHERE age > ?', $qb->getSql());
     }
 
     public function test_or_where(): void
     {
         $qb = $this->qb()->where('name', 'John')->orWhere('age', 25);
-        $this->assertSame('SELECT * FROM users WHERE name = ? OR age = ?', $qb->toSql());
+        $this->assertSame('SELECT * FROM users WHERE name = ? OR age = ?', $qb->getSql());
     }
 
     public function test_where_in(): void
     {
         $qb = $this->qb()->whereIn('id', [1, 2, 3]);
-        $this->assertSame('SELECT * FROM users WHERE id IN (?, ?, ?)', $qb->toSql());
+        $this->assertSame('SELECT * FROM users WHERE id IN (?, ?, ?)', $qb->getSql());
     }
 
     public function test_where_not_in(): void
     {
         $qb = $this->qb()->whereNotIn('id', [1, 2]);
-        $this->assertSame('SELECT * FROM users WHERE id NOT IN (?, ?)', $qb->toSql());
+        $this->assertSame('SELECT * FROM users WHERE id NOT IN (?, ?)', $qb->getSql());
     }
 
     public function test_where_null(): void
     {
         $qb = $this->qb()->whereNull('deleted_at');
-        $this->assertSame('SELECT * FROM users WHERE deleted_at IS NULL', $qb->toSql());
+        $this->assertSame('SELECT * FROM users WHERE deleted_at IS NULL', $qb->getSql());
     }
 
     public function test_where_not_null(): void
     {
         $qb = $this->qb()->whereNotNull('email');
-        $this->assertSame('SELECT * FROM users WHERE email IS NOT NULL', $qb->toSql());
+        $this->assertSame('SELECT * FROM users WHERE email IS NOT NULL', $qb->getSql());
     }
 
     public function test_where_raw(): void
     {
         $qb = $this->qb()->whereRaw('age > ?', [18]);
-        $this->assertSame('SELECT * FROM users WHERE age > ?', $qb->toSql());
+        $this->assertSame('SELECT * FROM users WHERE age > ?', $qb->getSql());
     }
 
     public function test_where_raw_with_or(): void
     {
         $qb = $this->qb()->where('age', '>', 18)->orWhereRaw('role = ?', ['admin']);
-        $this->assertSame('SELECT * FROM users WHERE age > ? OR role = ?', $qb->toSql());
+        $this->assertSame('SELECT * FROM users WHERE age > ? OR role = ?', $qb->getSql());
     }
 
     public function test_nested_where_group(): void
@@ -98,7 +98,7 @@ final class QueryBuilderTest extends TestCase
         $qb = $this->qb()->where(function (QueryBuilder $q) {
             $q->where('name', 'John')->orWhere('name', 'Jane');
         });
-        $this->assertSame('SELECT * FROM users WHERE (name = ? OR name = ?)', $qb->toSql());
+        $this->assertSame('SELECT * FROM users WHERE (name = ? OR name = ?)', $qb->getSql());
     }
 
     public function test_deep_nested_where_group(): void
@@ -113,7 +113,7 @@ final class QueryBuilderTest extends TestCase
             });
         $this->assertSame(
             'SELECT * FROM users WHERE status = ? AND (age >= ? AND (role = ? OR role = ?))',
-            $qb->toSql()
+            $qb->getSql()
         );
     }
 
@@ -122,7 +122,7 @@ final class QueryBuilderTest extends TestCase
         $qb = $this->qb()->join('posts', 'users.id', '=', 'posts.user_id');
         $this->assertSame(
             'SELECT * FROM users INNER JOIN posts ON users.id = posts.user_id',
-            $qb->toSql()
+            $qb->getSql()
         );
     }
 
@@ -131,7 +131,7 @@ final class QueryBuilderTest extends TestCase
         $qb = $this->qb()->leftJoin('posts', 'users.id', '=', 'posts.user_id');
         $this->assertSame(
             'SELECT * FROM users LEFT JOIN posts ON users.id = posts.user_id',
-            $qb->toSql()
+            $qb->getSql()
         );
     }
 
@@ -142,32 +142,32 @@ final class QueryBuilderTest extends TestCase
             ->join('comments', 'posts.id', '=', 'comments.post_id');
         $this->assertSame(
             'SELECT * FROM users INNER JOIN posts ON users.id = posts.user_id INNER JOIN comments ON posts.id = comments.post_id',
-            $qb->toSql()
+            $qb->getSql()
         );
     }
 
     public function test_order_by(): void
     {
         $qb = $this->qb()->orderBy('name');
-        $this->assertSame('SELECT * FROM users ORDER BY name ASC', $qb->toSql());
+        $this->assertSame('SELECT * FROM users ORDER BY name ASC', $qb->getSql());
     }
 
     public function test_order_by_desc(): void
     {
         $qb = $this->qb()->orderBy('name', 'DESC');
-        $this->assertSame('SELECT * FROM users ORDER BY name DESC', $qb->toSql());
+        $this->assertSame('SELECT * FROM users ORDER BY name DESC', $qb->getSql());
     }
 
     public function test_multiple_order_by(): void
     {
         $qb = $this->qb()->orderBy('name')->orderBy('age', 'DESC');
-        $this->assertSame('SELECT * FROM users ORDER BY name ASC, age DESC', $qb->toSql());
+        $this->assertSame('SELECT * FROM users ORDER BY name ASC, age DESC', $qb->getSql());
     }
 
     public function test_group_by(): void
     {
         $qb = $this->qb()->select('role', 'COUNT(*) AS cnt')->groupBy('role');
-        $this->assertSame('SELECT role, COUNT(*) AS cnt FROM users GROUP BY role', $qb->toSql());
+        $this->assertSame('SELECT role, COUNT(*) AS cnt FROM users GROUP BY role', $qb->getSql());
     }
 
     public function test_group_by_having(): void
@@ -178,20 +178,20 @@ final class QueryBuilderTest extends TestCase
             ->having('cnt', '>', 5);
         $this->assertSame(
             'SELECT role, COUNT(*) AS cnt FROM users GROUP BY role HAVING cnt > ?',
-            $qb->toSql()
+            $qb->getSql()
         );
     }
 
     public function test_limit(): void
     {
         $qb = $this->qb()->limit(10);
-        $this->assertSame('SELECT * FROM users LIMIT 10', $qb->toSql());
+        $this->assertSame('SELECT * FROM users LIMIT 10', $qb->getSql());
     }
 
     public function test_offset(): void
     {
         $qb = $this->qb()->limit(10)->offset(20);
-        $this->assertSame('SELECT * FROM users LIMIT 10 OFFSET 20', $qb->toSql());
+        $this->assertSame('SELECT * FROM users LIMIT 10 OFFSET 20', $qb->getSql());
     }
 
     public function test_full_query(): void
@@ -206,7 +206,7 @@ final class QueryBuilderTest extends TestCase
             ->offset(10);
         $this->assertSame(
             'SELECT users.id, users.name FROM users INNER JOIN posts ON users.id = posts.user_id WHERE users.active = ? AND users.deleted_at IS NULL ORDER BY users.name ASC LIMIT 5 OFFSET 10',
-            $qb->toSql()
+            $qb->getSql()
         );
     }
 
@@ -503,26 +503,26 @@ final class QueryBuilderTest extends TestCase
     public function test_identifier_whitelist_rejects_invalid_column(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->qb()->where('id; DROP TABLE users', 1)->toSql();
+        $this->qb()->where('id; DROP TABLE users', 1)->getSql();
     }
 
     public function test_identifier_whitelist_rejects_sql_injection(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->qb()->where("name' OR '1'='1", 'test')->toSql();
+        $this->qb()->where("name' OR '1'='1", 'test')->getSql();
     }
 
     public function test_identifier_whitelist_allows_qualified_column(): void
     {
         $qb = $this->qb()->where('users.status', 'active');
-        $this->assertSame('SELECT * FROM users WHERE users.status = ?', $qb->toSql());
+        $this->assertSame('SELECT * FROM users WHERE users.status = ?', $qb->getSql());
     }
 
     public function test_chain_to_sql_does_not_mutate_builder(): void
     {
         $qb = $this->qb()->where('name', 'Alice');
-        $sql1 = $qb->toSql();
-        $sql2 = $qb->toSql();
+        $sql1 = $qb->getSql();
+        $sql2 = $qb->getSql();
 
         $this->assertSame($sql1, $sql2);
     }
