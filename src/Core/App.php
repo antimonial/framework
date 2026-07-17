@@ -6,6 +6,7 @@ namespace Antimonial\Core;
 
 use Antimonial\Http\Request;
 use Antimonial\Http\Response;
+use Antimonial\Middleware\MiddlewareInterface;
 use Antimonial\Routing\Router;
 use Antimonial\View\View;
 use Closure;
@@ -62,6 +63,9 @@ class App
         ErrorHandler::register();
 
         $timezone = Config::get('app.timezone', 'UTC');
+        if (!is_string($timezone)) {
+            $timezone = 'UTC';
+        }
         date_default_timezone_set($timezone);
 
         // Opt-in sessions: the framework does not force a session on you.
@@ -82,7 +86,9 @@ class App
                 $request->set($key, $value);
             }
 
+            /** @var array<int, class-string<MiddlewareInterface>> $middlewares */
             $middlewares = $match['middleware'];
+            /** @var array{0: class-string, 1: string}|Closure $handler */
             $handler = $match['handler'];
 
             $response = $this->runMiddleware(
@@ -96,7 +102,7 @@ class App
                 $response = (new Response())
                     ->status(404)
                     ->header('Content-Type', 'text/html; charset=UTF-8')
-                    ->body($html);
+                    ->body((string) $html);
             } catch (\RuntimeException) {
                 $response = (new Response())
                     ->status(404)
@@ -110,6 +116,9 @@ class App
                 $body = json_encode(['errors' => $errors], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
             } catch (JsonException $jsonException) {
                 $body = json_encode(['errors' => ['validation' => 'unencodable']]);
+                if ($body === false) {
+                    $body = '{"errors":{"validation":"unencodable"}}';
+                }
             }
 
             $response = (new Response())
@@ -135,6 +144,7 @@ class App
 
         if (file_exists($routesFile)) {
             $router = $this->router;
+            /** @phpstan-ignore-next-line Path depends on runtime ROOT_PATH */
             require $routesFile;
         }
     }
@@ -160,10 +170,12 @@ class App
     {
         if ($handler instanceof Closure) {
             $result = $handler($request);
-        } else {
+        } elseif (is_array($handler)) {
             [$class, $method] = $handler;
             $controller = new $class();
             $result = $controller->$method($request);
+        } else {
+            throw new RuntimeException('Unsupported controller handler type: ' . get_debug_type($handler));
         }
 
         if ($result instanceof Response) {
@@ -203,7 +215,8 @@ class App
         foreach (array_reverse($middlewares) as $middleware) {
             $next = $handler;
             $handler = function (Request $req) use ($middleware, $next) {
-                $instance = is_string($middleware) ? new $middleware() : $middleware;
+                /** @var MiddlewareInterface $instance */
+                $instance = new $middleware();
                 return $instance->handle($req, $next);
             };
         }

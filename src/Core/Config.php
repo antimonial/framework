@@ -84,15 +84,15 @@ class Config
             return self::$data[$file];
         }
 
-        return self::dotGet(self::$data[$file], $parts[1], $default);
+        return self::dotGet((array) self::$data[$file], $parts[1], $default);
     }
 
     /**
      * Retrieve a nested value from an array using dot notation.
      *
-     * @param array<string, mixed> $array
-     * @param string               $key    Remaining dot-notation path
-     * @param mixed                $default
+     * @param array<array-key, mixed> $array
+     * @param string                  $key    Remaining dot-notation path
+     * @param mixed                   $default
      * @return mixed
      */
     private static function dotGet(array $array, string $key, mixed $default): mixed
@@ -100,10 +100,10 @@ class Config
         $keys = explode('.', $key);
 
         foreach ($keys as $k) {
-            if (!is_array($array) || !array_key_exists($k, $array)) {
+            if (!array_key_exists($k, $array)) {
                 return $default;
             }
-            $array = $array[$k];
+            $array = (array) $array[$k];
         }
 
         return $array;

@@ -35,6 +35,9 @@ class Controller
      * @return Response
      * @see \Antimonial\View\View::renderWithLayout()
      */
+    /**
+     * @param array<string, mixed> $data
+     */
     protected function view(string $path, array $data = [], ?string $layout = null): Response
     {
         return view($path, $data, $layout);
@@ -80,8 +83,9 @@ class Controller
      */
     protected function back(Request $request): Response
     {
-        $referer = $request->header('referer', '/');
-        return redirect((string) $referer);
+        /** @var string $referer */
+        $referer = $request->header('referer', '/') ?? '/';
+        return redirect($referer);
     }
 
     /**
@@ -119,7 +123,8 @@ class Controller
 
         foreach ($rules as $field => $ruleString) {
             $ruleList = array_map('trim', explode('|', $ruleString));
-            $value = $data[$field] ?? null;
+            /** @var string $value */
+            $value = $data[$field] ?? '';
             $fieldErrors = [];
 
             foreach ($ruleList as $rule) {
@@ -146,50 +151,51 @@ class Controller
      *
      * @param string               $rule
      * @param string               $field
-     * @param mixed                $value
+     * @param string               $value
      * @param array<string, mixed> $allData
      * @return string|null Error message or null if valid
      */
-    private function applyRule(string $rule, string $field, mixed $value, array $allData): ?string
+    private function applyRule(string $rule, string $field, string $value, array $allData): ?string
     {
         // Handle parameterized rules (e.g. 'min:3')
         $params = explode(':', $rule);
         $ruleName = $params[0];
         $paramValue = $params[1] ?? null;
+        $paramStr = (string) $paramValue;
 
         $isNum = is_numeric($value);
 
         return match ($ruleName) {
-            'required' => ($value === null || $value === '')
-                ? "The {$field} field is required."
+            'required' => ($value === '')
+                ? 'The ' . $field . ' field is required.'
                 : null,
 
-            'email' => ($value !== null && $value !== '' && !filter_var($value, FILTER_VALIDATE_EMAIL))
-                ? "The {$field} field must be a valid email address."
+            'email' => ($value !== '' && !filter_var($value, FILTER_VALIDATE_EMAIL))
+                ? 'The ' . $field . ' field must be a valid email address.'
                 : null,
 
-            'min' => ($value !== null && $value !== '' && ($isNum ? (float) $value < (float) $paramValue : strlen((string) $value) < (int) $paramValue))
-                ? "The {$field} field must be at least {$paramValue}."
+            'min' => ($value !== '' && ($isNum ? (float) $value < (float) $paramValue : strlen($value) < (int) $paramValue))
+                ? 'The ' . $field . ' field must be at least ' . $paramStr . '.'
                 : null,
 
-            'max' => ($value !== null && $value !== '' && ($isNum ? (float) $value > (float) $paramValue : strlen((string) $value) > (int) $paramValue))
-                ? "The {$field} field must not exceed {$paramValue}."
+            'max' => ($value !== '' && ($isNum ? (float) $value > (float) $paramValue : strlen($value) > (int) $paramValue))
+                ? 'The ' . $field . ' field must not exceed ' . $paramStr . '.'
                 : null,
 
-            'in' => ($value !== null && $value !== '' && !in_array((string) $value, explode(',', $paramValue), true))
-                ? "The {$field} field must be one of: {$paramValue}."
+            'in' => ($value !== '' && !in_array($value, explode(',', $paramStr), true))
+                ? 'The ' . $field . ' field must be one of: ' . $paramStr . '.'
                 : null,
 
-            'numeric' => ($value !== null && $value !== '' && !is_numeric($value))
-                ? "The {$field} field must be numeric."
+            'numeric' => ($value !== '' && !is_numeric($value))
+                ? 'The ' . $field . ' field must be numeric.'
                 : null,
 
-            'alpha' => ($value !== null && $value !== '' && !preg_match('/^[a-zA-Z]+$/', (string) $value))
-                ? "The {$field} field must contain only letters."
+            'alpha' => ($value !== '' && !preg_match('/^[a-zA-Z]+$/', $value))
+                ? 'The ' . $field . ' field must contain only letters.'
                 : null,
 
-            'alpha_num' => ($value !== null && $value !== '' && !preg_match('/^[a-zA-Z0-9]+$/', (string) $value))
-                ? "The {$field} field must contain only letters and numbers."
+            'alpha_num' => ($value !== '' && !preg_match('/^[a-zA-Z0-9]+$/', $value))
+                ? 'The ' . $field . ' field must contain only letters and numbers.'
                 : null,
 
             default => null,

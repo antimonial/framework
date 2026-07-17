@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Antimonial\View;
 
+use RuntimeException;
+
 /**
  * View renderer.
  *
@@ -13,7 +15,8 @@ namespace Antimonial\View;
  *
  * The framework ships a built-in template engine (ViewEngine) that compiles
  * templates to cached PHP (Blade-style directives, auto-escaping, |filters,
- * @extends/@section layouts, @include) — see ViewEngine, Compiler and Filters.
+ * the extends/section layouts, and include) — see ViewEngine, Compiler
+ * and Filters.
  *
  * @see \Antimonial\Controller\Controller::view()
  * @see Helpers::view()
@@ -70,7 +73,7 @@ class View
      * @throws RuntimeException If the view file does not exist
      * @see renderWithLayout()
      */
-    public static function render(string $path, array $data = [], ?array &$capturedVars = null): string
+    public static function render(string $path, array $data = [], ?array $capturedVars = null): string
     {
         if (self::$engine === null) {
             self::$engine = new ViewEngine(self::getViewPath());
@@ -108,6 +111,7 @@ class View
         $captured = [];
         $content = self::render($path, $data, $captured);
 
+        /** @var array<string, mixed> $layoutData */
         $layoutData = array_merge($data, ['content' => $content], $captured);
 
         return self::render($layout, $layoutData);

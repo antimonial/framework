@@ -29,13 +29,17 @@ final class CsrfMiddleware implements MiddlewareInterface
     public function handle(Request $request, callable $next): Response
     {
         if (in_array(strtoupper($request->method()), self::SAFE_METHODS, true)) {
-            return $next($request);
+            /** @var Response $response */
+            $response = $next($request);
+            return $response;
         }
 
         Session::start();
 
         try {
-            Csrf::verify($request->post('_token') ?? $request->header('X-CSRF-TOKEN'));
+            /** @var string|null $token */
+            $token = $request->post('_token') ?? $request->header('X-CSRF-TOKEN');
+            Csrf::verify($token);
         } catch (TokenMismatchException) {
             return (new Response())
                 ->status(419)
@@ -43,6 +47,8 @@ final class CsrfMiddleware implements MiddlewareInterface
                 ->body('419 Page Expired');
         }
 
-        return $next($request);
+        /** @var Response $nextResponse */
+        $nextResponse = $next($request);
+        return $nextResponse;
     }
 }

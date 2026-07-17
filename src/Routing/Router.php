@@ -159,9 +159,15 @@ class Router
      * @param string[] $middleware Middleware class names applied to all routes in the group
      * @return void
      */
+    /**
+     * @param array<int, class-string> $middleware
+     */
     public function group(string $prefix, callable $callback, array $middleware = []): void
     {
-        $this->groupStack[] = ['prefix' => $prefix, 'middleware' => $middleware];
+        $this->groupStack[] = [
+            'prefix' => $prefix,
+            'middleware' => array_values($middleware),
+        ];
         $callback($this);
         array_pop($this->groupStack);
     }
@@ -186,7 +192,7 @@ class Router
      * Returns the handler, middleware, and extracted parameters.
      *
      * @param Request $request
-     * @return array{handler: Closure|array, middleware: class-string[], params: array<string, string>}
+     * @return array{handler: Closure|array{0: class-string, 1: string}, middleware: class-string[], params: array<string, string>}
      * @throws HttpNotFoundException If no route matches
      */
     public function dispatch(Request $request): array
@@ -226,9 +232,9 @@ class Router
     /**
      * Create and store a route.
      *
-     * @param string              $method
-     * @param string              $path
-     * @param Closure|array      $handler
+     * @param string $method
+     * @param string $path
+     * @param Closure|array{0: class-string, 1: string} $handler
      * @return Route The registered Route instance
      */
     private function addRoute(string $method, string $path, Closure|array $handler): Route

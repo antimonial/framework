@@ -49,10 +49,12 @@ class DB
         }
 
         if ($config === null) {
-            $default = Config::get('database.default', 'mysql');
-            $config = Config::get("database.connections.{$default}", []);
+            $default = (string) Config::get('database.default', 'mysql');
+            $dbConfig = Config::get("database.connections.{$default}", []);
+            $config = is_array($dbConfig) ? $dbConfig : [];
         }
 
+        /** @var array<string, mixed> $config */
         self::$connection = new Connection($config);
         return self::$connection;
     }
@@ -73,9 +75,12 @@ class DB
      * Execute a raw SELECT query.
      *
      * @param string $sql
-     * @param array  $bindings
+     * @param array<string, mixed> $bindings
      * @return object[]
      * @throws PDOException If the query fails
+     */
+    /**
+     * @return array<object>
      */
     public static function select(string $sql, array $bindings = []): array
     {

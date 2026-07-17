@@ -15,7 +15,7 @@ namespace Antimonial\View;
 final class Filters
 {
     /**
-     * @var array<string, callable(mixed): mixed>
+     * @var array<string, callable>
      */
     private static array $map = [
         'escape' => [self::class, 'escape'],
@@ -32,8 +32,8 @@ final class Filters
     /**
      * Register a filter callable.
      *
-     * @param string                         $name
-     * @param callable(mixed): mixed         $fn
+     * @param string   $name
+     * @param callable $fn
      * @return void
      */
     public static function add(string $name, callable $fn): void
@@ -64,8 +64,8 @@ final class Filters
             }
 
             $value = $arg === null
-                ? (self::$map[$name])($value)
-                : (self::$map[$name])($value, trim($arg));
+                ? call_user_func(self::$map[$name], $value)
+                : call_user_func(self::$map[$name], $value, trim((string) $arg));
         }
 
         return $value;
@@ -75,7 +75,8 @@ final class Filters
 
     public static function escape(mixed $value): string
     {
-        return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+        $str = (string) $value;
+        return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
     }
 
     public static function raw(mixed $value): string

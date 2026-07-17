@@ -70,7 +70,7 @@ class QueryBuilder
      *
      * Each entry: ['logic' => 'AND'|'OR', 'sql' => string, 'bindings' => array]
      *
-     * @var array<int, array{logic: string, sql: string, bindings: array}>
+     * @var array<int, array{logic: string, sql: string, bindings: array<int, mixed>}>
      */
     private array $wheres = [];
 
@@ -93,7 +93,7 @@ class QueryBuilder
      *
      * Each entry: ['sql' => string, 'bindings' => array]
      *
-     * @var array<int, array{sql: string, bindings: array}>
+     * @var array<int, array{sql: string, bindings: array<int, mixed>}>
      */
     private array $havings = [];
 
@@ -207,9 +207,12 @@ class QueryBuilder
 
         if ($value === null && !$this->isOperator($operatorOrValue)) {
             $value = $operatorOrValue;
+            /** @var string $operatorOrValue */
             $operatorOrValue = '=';
         }
 
+        /** @var string $operatorOrValue */
+        $operatorOrValue = (string) $operatorOrValue;
         $placeholder = $this->addBinding($value);
         $this->wheres[] = [
             'logic'    => 'AND',
@@ -261,7 +264,7 @@ class QueryBuilder
         $placeholder = $this->addBinding($value);
         $this->wheres[] = [
             'logic'    => 'OR',
-            'sql'      => "{$column} {$operatorOrValue} {$placeholder}",
+            'sql'      => "{$column} " . (string) $operatorOrValue . " {$placeholder}",
             'bindings' => [$value],
         ];
 
@@ -274,7 +277,7 @@ class QueryBuilder
      * @example ->whereIn('id', [1, 2, 3])
      *
      * @param string $column
-     * @param array  $values
+     * @param array<int, mixed> $values
      * @return $this
      */
     public function whereIn(string $column, array $values): static
@@ -306,7 +309,7 @@ class QueryBuilder
      * Add a WHERE NOT IN clause.
      *
      * @param string $column
-     * @param array  $values
+     * @param array<int, mixed> $values
      * @return $this
      */
     public function whereNotIn(string $column, array $values): static
@@ -367,7 +370,7 @@ class QueryBuilder
      * @example ->whereRaw('age > ? OR role = ?', [18, 'admin'])
      *
      * @param string $sql      Raw SQL fragment (e.g. 'age > ? OR role = ?')
-     * @param array  $bindings Values for ? placeholders
+     * @param array<int, mixed> $bindings Values for ? placeholders
      * @return $this
      */
     public function whereRaw(string $sql, array $bindings = []): static
@@ -570,7 +573,7 @@ class QueryBuilder
      *
      * @param string      $key      Column to use as array key
      * @param string|null $valueKey Column to use as array value (null = entire row)
-     * @return array
+     * @return array<int|string, mixed>
      * @throws PDOException If the query fails
      */
     public function pluck(string $key, ?string $valueKey = null): array
@@ -583,6 +586,7 @@ class QueryBuilder
             if ($k === null) {
                 continue;
             }
+            /** @var int|string $k */
             $plucked[$k] = $valueKey !== null ? ($row->$valueKey ?? null) : $row;
         }
 
@@ -605,7 +609,8 @@ class QueryBuilder
         $result = $this->connection->select($sql, $this->getWhereBindings());
         $this->reset();
 
-        return (int) ($result[0]->aggregate ?? 0);
+        $aggregate = $result[0]->aggregate ?? 0;
+        return is_numeric($aggregate) ? (int) $aggregate : 0;
     }
 
     /**
@@ -628,7 +633,8 @@ class QueryBuilder
      */
     public function sum(string $column): float
     {
-        return (float) $this->aggregate("SUM({$column})");
+        $value = $this->aggregate("SUM({$column})");
+        return is_numeric($value) ? (float) $value : 0.0;
     }
 
     /**
@@ -640,7 +646,8 @@ class QueryBuilder
      */
     public function avg(string $column): float
     {
-        return (float) $this->aggregate("AVG({$column})");
+        $value = $this->aggregate("AVG({$column})");
+        return is_numeric($value) ? (float) $value : 0.0;
     }
 
     /**

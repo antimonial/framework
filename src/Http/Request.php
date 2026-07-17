@@ -43,7 +43,7 @@ class Request
     private array $cookies;
 
     /**
-     * @var array<string, array> Uploaded files ($_FILES)
+     * @var array<string, array{name: string, type: string, tmp_name: string, error: int, size: int}> Uploaded files ($_FILES)
      */
     private array $files;
 
@@ -78,7 +78,7 @@ class Request
      * @param array<string, mixed> $post
      * @param array<string, mixed> $server
      * @param array<string, mixed> $cookies
-     * @param array<string, array> $files
+     * @param array<string, array{name: string, type: string, tmp_name: string, error: int, size: int}> $files
      */
     private function __construct(
         array $get,
@@ -103,6 +103,7 @@ class Request
      */
     public static function fromGlobals(): static
     {
+        /** @phpstan-ignore-next-line unsafe usage of new static() is acceptable in a request factory */
         return new static(
             $_GET,
             self::parseInput(),
@@ -124,16 +125,25 @@ class Request
      */
     private static function parseInput(): array
     {
-        $input = $_POST;
+        /** @var array<string, mixed> $input */
+        $input = [];
+        foreach ($_POST as $key => $value) {
+            $input[(string) $key] = $value;
+        }
 
-        $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+        /** @var string $requestMethod */
+        $requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        $method = strtoupper($requestMethod);
         if (in_array($method, ['PUT', 'DELETE', 'PATCH'], true)) {
+            /** @var string $contentType */
             $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
             if (stripos($contentType, 'application/x-www-form-urlencoded') !== false) {
                 $raw = file_get_contents('php://input');
                 if (is_string($raw) && $raw !== '') {
                     parse_str($raw, $parsed);
-                    $input = array_merge($input, $parsed);
+                    foreach ((array) $parsed as $pk => $pv) {
+                        $input[(string) $pk] = $pv;
+                    }
                 }
             }
         }
@@ -268,7 +278,7 @@ class Request
      * @param string $key
      * @return array{name: string, type: string, tmp_name: string, error: int, size: int}|null
      */
-    public function file(string $key): ?array
+    public function file(string $key): array|null
     {
         return $this->files[$key] ?? null;
     }
@@ -323,7 +333,8 @@ class Request
         }
 
         $raw = file_get_contents('php://input');
-        $data = json_decode($raw, true);
+        /** @var array<string, mixed>|null $data */
+        $data = is_string($raw) ? json_decode($raw, true) : null;
 
         $this->jsonBody = is_array($data) ? $data : null;
 
@@ -381,7 +392,9 @@ class Request
      */
     private function detectMethod(): string
     {
-        $method = strtoupper($this->server['REQUEST_METHOD'] ?? 'GET');
+        /** @var string $requestMethod */
+        $requestMethod = $this->server['REQUEST_METHOD'] ?? 'GET';
+        $method = strtoupper($requestMethod);
 
         if ($method === 'POST') {
             $override = $this->server['HTTP_X_HTTP_METHOD_OVERRIDE']
@@ -389,7 +402,9 @@ class Request
                 ?? null;
 
             if ($override !== null) {
-                $method = strtoupper((string) $override);
+                /** @var string $overrideString */
+                $overrideString = $override;
+                $method = strtoupper($overrideString);
             }
         }
 
@@ -405,6 +420,7 @@ class Request
      */
     private function detectUri(): string
     {
+        /** @var string $uri */
         $uri = $this->server['REQUEST_URI'] ?? '/';
 
         // Strip query string
@@ -414,6 +430,7 @@ class Request
         }
 
         // Strip base path if SCRIPT_NAME is set
+        /** @var string $script */
         $script = $this->server['SCRIPT_NAME'] ?? '';
         $base = dirname($script);
         if ($base !== '' && $base !== '/' && str_starts_with($uri, $base)) {

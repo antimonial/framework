@@ -160,7 +160,7 @@ class Model
     /**
      * Update a row by its primary key.
      *
-     * @example (new User())->update(42, ['name' => 'Jane']);
+     * Example: (new User())->update(42, ['name' => 'Jane']);
      *
      * @param mixed                $id
      * @param array<string, mixed> $data
@@ -182,7 +182,7 @@ class Model
     /**
      * Delete a row by its primary key.
      *
-     * @example (new User())->delete(42);
+     * Example: (new User())->delete(42);
      *
      * @param mixed $id
      * @return int Affected row count
@@ -226,11 +226,11 @@ class Model
     private function guessTableName(): string
     {
         // Remove 'Model' suffix if present
-        $class = basename(str_replace('\\', '/', get_class($this)));
-        $class = preg_replace('/Model$/', '', $class);
+        $class = (string) basename(str_replace('\\', '/', get_class($this)));
+        $class = (string) preg_replace('/Model$/', '', $class);
 
         // PascalCase -> snake_case
-        $name = preg_replace('/(?<!^)[A-Z]/', '_$0', $class);
+        $name = (string) preg_replace('/(?<!^)[A-Z]/', '_$0', $class);
         $name = strtolower($name);
 
         // Basic pluralization (just adds 's')

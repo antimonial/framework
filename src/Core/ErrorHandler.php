@@ -53,7 +53,12 @@ class ErrorHandler
      */
     public static function register(): void
     {
-        set_error_handler([self::class, 'handleError']);
+        set_error_handler(
+            function (int $errno, string $errstr, string $errfile = '', int $errline = 0): bool {
+                self::handleError($errno, $errstr, $errfile, $errline);
+                return true;
+            }
+        );
         set_exception_handler([self::class, 'handleException']);
         register_shutdown_function([self::class, 'handleShutdown']);
     }

@@ -260,7 +260,7 @@ class Compiler
     }
 
     /**
-     * @set($total = 0) -> <?php $total = 0; ?>
+     * Compile a @set directive body to PHP.
      *
      * @param string $body
      * @return string

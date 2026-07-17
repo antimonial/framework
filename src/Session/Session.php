@@ -50,11 +50,20 @@ final class Session
         unset($_SESSION['__flash']);
     }
 
+    /**
+     * @param string $key
+     * @return bool
+     */
     public static function has(string $key): bool
     {
         return isset($_SESSION[$key]);
     }
 
+    /**
+     * @param string $key
+     * @param mixed $default
+     * @return mixed
+     */
     public static function get(string $key, mixed $default = null): mixed
     {
         return $_SESSION[$key] ?? $default;
@@ -85,6 +94,11 @@ final class Session
      * @param mixed  $default
      * @return mixed
      */
+    /**
+     * @param string $key
+     * @param mixed $default
+     * @return mixed
+     */
     public static function pull(string $key, mixed $default = null): mixed
     {
         $value = self::get($key, $default);
@@ -101,7 +115,10 @@ final class Session
      */
     public static function flash(string $key, mixed $value): void
     {
-        $_SESSION['__flash'][$key] = $value;
+        /** @var array<string, mixed> $flash */
+        $flash = $_SESSION['__flash'] ?? [];
+        $flash[$key] = $value;
+        $_SESSION['__flash'] = $flash;
     }
 
     /**
@@ -113,12 +130,19 @@ final class Session
      */
     public static function getFlash(string $key, mixed $default = null): mixed
     {
-        return $_SESSION['__flash'][$key] ?? $default;
+        /** @var array<string, mixed> $flash */
+        $flash = $_SESSION['__flash'] ?? [];
+        return $flash[$key] ?? $default;
     }
 
-    public static function forget(string|array $key): void
+    public static function forget(string|array<int, string> $key): void
     {
-        foreach ((array) $key as $k) {
+        if (is_string($key)) {
+            unset($_SESSION[$key]);
+            return;
+        }
+
+        foreach ($key as $k => $v) {
             unset($_SESSION[$k]);
         }
     }
@@ -134,6 +158,10 @@ final class Session
      * @param bool $destroy Whether to destroy the old session data.
      * @return void
      */
+    /**
+     * @param bool $destroy
+     * @return void
+     */
     public static function regenerate(bool $destroy = false): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -143,8 +171,11 @@ final class Session
         session_regenerate_id($destroy);
     }
 
+    /**
+     * @return string
+     */
     public static function id(): string
     {
-        return session_id();
+        return (string) session_id();
     }
 }

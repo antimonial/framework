@@ -39,14 +39,7 @@ class Connection
     /**
      * Connection configuration.
      *
-     * @var array{
-     *     host: string,
-     *     port: int,
-     *     database: string,
-     *     username: string,
-     *     password: string,
-     *     charset: string
-     * }
+     * @var array<string, mixed>
      */
     private array $config;
 
@@ -59,10 +52,10 @@ class Connection
             'driver'   => $config['driver'] ?? 'mysql',
             'host'     => $config['host'] ?? '127.0.0.1',
             'port'     => (int) ($config['port'] ?? 3306),
-            'database' => $config['database'] ?? '',
-            'username' => $config['username'] ?? 'root',
-            'password' => $config['password'] ?? '',
-            'charset'  => $config['charset'] ?? 'utf8mb4',
+            'database' => (string) ($config['database'] ?? ''),
+            'username' => (string) ($config['username'] ?? 'root'),
+            'password' => (string) ($config['password'] ?? ''),
+            'charset'  => (string) ($config['charset'] ?? 'utf8mb4'),
         ];
     }
 
@@ -74,17 +67,17 @@ class Connection
      */
     private function connect(): void
     {
-        $driver = $this->config['driver'] ?? 'mysql';
+        $driver = is_string($this->config['driver'] ?? null) ? $this->config['driver'] : 'mysql';
 
         $dsn = match ($driver) {
-            'sqlite' => 'sqlite:' . ($this->config['database'] !== '' ? $this->config['database'] : ':memory:'),
+            'sqlite' => 'sqlite:' . ((string) ($this->config['database'] ?? '') !== '' ? (string) $this->config['database'] : ':memory:'),
             default  => sprintf(
                 '%s:host=%s;port=%d;dbname=%s;charset=%s',
                 $driver,
-                $this->config['host'],
-                $this->config['port'],
-                $this->config['database'],
-                $this->config['charset'],
+                (string) ($this->config['host'] ?? '127.0.0.1'),
+                (int) ($this->config['port'] ?? 3306),
+                (string) ($this->config['database'] ?? ''),
+                (string) ($this->config['charset'] ?? 'utf8mb4'),
             ),
         };
 
@@ -106,7 +99,9 @@ class Connection
         if ($this->pdo === null) {
             $this->connect();
         }
-        return $this->pdo;
+        /** @var PDO $pdo */
+        $pdo = $this->pdo;
+        return $pdo;
     }
 
     // ─── Query Execution ────────────────────────────────────────
@@ -118,6 +113,9 @@ class Connection
      * @param array  $bindings Parameter values
      * @return object[] Array of stdClass objects
      * @throws PDOException If the query fails
+     */
+    /**
+     * @param array<int, mixed> $bindings
      */
     public function select(string $sql, array $bindings = []): array
     {
@@ -133,17 +131,21 @@ class Connection
      * @return string The last inserted row ID
      * @throws PDOException If the query fails
      */
+    /**
+     * @param array<int, mixed> $bindings
+     */
     public function insert(string $sql, array $bindings = []): string
     {
         $this->execute($sql, $bindings);
-        return $this->getPdo()->lastInsertId();
+        $id = $this->getPdo()->lastInsertId();
+        return is_string($id) ? $id : '';
     }
 
     /**
      * Execute an UPDATE or DELETE query.
      *
      * @param string $sql      SQL query with ? placeholders
-     * @param array  $bindings Parameter values
+     * @param array<string, mixed>  $bindings Parameter values
      * @return int Number of affected rows
      * @throws PDOException If the query fails
      */
@@ -157,7 +159,7 @@ class Connection
      * Execute a raw SQL statement with bindings.
      *
      * @param string $sql
-     * @param array  $bindings
+     * @param array<int, mixed> $bindings
      * @return PDOStatement
      * @throws PDOException If the query fails
      */
@@ -185,7 +187,8 @@ class Connection
      */
     public function lastInsertId(): string
     {
-        return $this->getPdo()->lastInsertId();
+        $id = $this->getPdo()->lastInsertId();
+        return is_string($id) ? $id : '';
     }
 
     // ─── Transactions ───────────────────────────────────────────

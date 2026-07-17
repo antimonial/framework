@@ -13,9 +13,10 @@ use \Antimonial\View\Compiler;
  * Compiles templates to PHP once, caches them in a storage dir, and
  * includes the cached file. Auto-escaping is on by default.
  *
- * Layouts: a child template calls @extends('layout'); its @section blocks
- * are captured and injected into the parent's @yield slots. Only one
- * @extends per template is supported (matching Blade/Twig).
+ * Layouts: a child template calls the extends directive (@extends('layout'));
+ * its @section blocks are captured and injected into the parent's @yield
+ * slots. Only one extends directive per template is supported
+ * (matching Blade/Twig).
  *
  * @see View
  * @see Compiler
@@ -46,7 +47,7 @@ class ViewEngine
      * Render a template to a string.
      *
      * @param string $path Template path relative to viewPath (e.g. 'users/index')
-     * @param array  $data Variables available in the template
+     * @param array<string, mixed> $data Variables available in the template
      * @return string
      * @throws RuntimeException If the template is missing
      */
@@ -159,7 +160,7 @@ class ViewEngine
      * If no data is given, the parent template's variables are inherited.
      *
      * @param string $path
-     * @param array  $data
+     * @param array<string, mixed> $data
      * @return string
      */
     public function include(string $path, array $data = []): string
@@ -242,14 +243,12 @@ class ViewEngine
      * Evaluate compiled PHP with extracted data.
      *
      * @param string $compiled
-     * @param array  $data
+     * @param array<string, mixed> $data
      * @return string
      */
     private function evaluate(string $compiled, array $data): string
     {
         $this->parentData = $data;
-        $this->extendingChild = false;
-        $this->extendLayout = null;
         $__engine = $this;
         extract($data, EXTR_SKIP);
 
@@ -262,15 +261,18 @@ class ViewEngine
         // their own buffers) becomes $content of the layout.
         if ($this->extendingChild && $this->extendLayout !== null) {
             $content = $output;
-            $this->extendingChild = false;
             $layout = $this->extendLayout;
             $this->extendLayout = null;
+            $this->extendingChild = false;
 
             return $this->render(
                 $layout,
                 array_merge($data, ['content' => $content])
             );
         }
+
+        $this->extendLayout = null;
+        $this->extendingChild = false;
 
         return $output;
     }
