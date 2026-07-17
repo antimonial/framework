@@ -60,6 +60,7 @@ class Config
      *
      * @param  string  $key  Dot-notation key (e.g. 'database.host')
      * @param  mixed  $default  Default value if key is not found
+     * @return mixed The config value, or default
      */
     public static function get(string $key, mixed $default = null): mixed
     {
@@ -90,6 +91,8 @@ class Config
      *
      * @param  array<array-key, mixed>  $array
      * @param  string  $key  Remaining dot-notation path
+     * @param  mixed  $default  Default if key is not found
+     * @return mixed The nested value, or default
      */
     private static function dotGet(array $array, string $key, mixed $default): mixed
     {

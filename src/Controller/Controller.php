@@ -31,13 +31,10 @@ class Controller
      * @example return $this->view('users/index', ['users' => $users], 'layouts/main');
      *
      * @param  string  $path  View path relative to app/Views (e.g. 'users/index')
-     * @param  array  $data  Variables available in the view
+     * @param  array<string, mixed>  $data  Variables available in the view
      * @param  string|null  $layout  Optional layout to wrap the view in
      *
      * @see View::renderWithLayout()
-     */
-    /**
-     * @param  array<string, mixed>  $data
      */
     protected function view(string $path, array $data = [], ?string $layout = null): Response
     {
@@ -78,6 +75,9 @@ class Controller
      * Redirect back to the previous page (HTTP_REFERER).
      *
      * Falls back to '/' if no Referer header is present.
+     *
+     * @param  Request  $request  The current request
+     * @return Response A redirect response
      */
     protected function back(Request $request): Response
     {
@@ -154,7 +154,10 @@ class Controller
     /**
      * Apply a single validation rule.
      *
-     * @param  array<string, mixed>  $allData
+     * @param  string  $rule  Rule name with optional ":param" suffix
+     * @param  string  $field  Field being validated
+     * @param  string  $value  Field value
+     * @param  array<string, mixed>  $allData  All submitted data
      * @return string|null Error message or null if valid
      */
     private function applyRule(string $rule, string $field, string $value, array $allData): ?string

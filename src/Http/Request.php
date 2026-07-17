@@ -100,6 +100,8 @@ class Request
 
     /**
      * Create a Request from PHP superglobals.
+     *
+     * @return static A new request instance
      */
     public static function fromGlobals(): static
     {
@@ -173,6 +175,8 @@ class Request
 
     /**
      * Check if the request method is GET.
+     *
+     * @return bool True if GET request
      */
     public function isGet(): bool
     {
@@ -181,6 +185,8 @@ class Request
 
     /**
      * Check if the request method is POST.
+     *
+     * @return bool True if POST request
      */
     public function isPost(): bool
     {
@@ -189,6 +195,8 @@ class Request
 
     /**
      * Check if the request method is PUT.
+     *
+     * @return bool True if PUT request
      */
     public function isPut(): bool
     {
@@ -197,6 +205,8 @@ class Request
 
     /**
      * Check if the request method is DELETE.
+     *
+     * @return bool True if DELETE request
      */
     public function isDelete(): bool
     {
@@ -207,6 +217,10 @@ class Request
      * Get a value from $_POST or $_GET (POST first, then GET fallback).
      *
      * @example $name = $request->input('name');
+     *
+     * @param  string  $key  Input key
+     * @param  mixed  $default  Default if not found
+     * @return mixed The value, or default
      */
     public function input(string $key, mixed $default = null): mixed
     {
@@ -225,6 +239,9 @@ class Request
 
     /**
      * Check if an input key exists.
+     *
+     * @param  string  $key  Input key
+     * @return bool True if the key is present in POST or GET
      */
     public function has(string $key): bool
     {
@@ -235,6 +252,10 @@ class Request
      * Get a value from $_GET.
      *
      * @example $page = $request->query('page', 1);
+     *
+     * @param  string  $key  Query parameter key
+     * @param  mixed  $default  Default if not found
+     * @return mixed The value, or default
      */
     public function query(string $key, mixed $default = null): mixed
     {
@@ -243,6 +264,10 @@ class Request
 
     /**
      * Get a value from $_POST.
+     *
+     * @param  string  $key  POST parameter key
+     * @param  mixed  $default  Default if not found
+     * @return mixed The value, or default
      */
     public function post(string $key, mixed $default = null): mixed
     {
@@ -261,6 +286,10 @@ class Request
 
     /**
      * Get a cookie value.
+     *
+     * @param  string  $key  Cookie name
+     * @param  mixed  $default  Default if not found
+     * @return mixed The cookie value, or default
      */
     public function cookie(string $key, mixed $default = null): mixed
     {
@@ -275,6 +304,8 @@ class Request
      * @example $auth = $request->header('Authorization');
      *
      * @param  string  $name  Header name (e.g. 'Authorization')
+     * @param  mixed  $default  Default if not found
+     * @return mixed The header value, or default
      */
     public function header(string $name, mixed $default = null): mixed
     {
@@ -315,6 +346,9 @@ class Request
      * Set an attribute on the request.
      *
      * Used by middleware and the router to pass data to controllers.
+     *
+     * @param  string  $key  Attribute name
+     * @param  mixed  $value  Attribute value
      */
     public function set(string $key, mixed $value): void
     {
@@ -323,6 +357,10 @@ class Request
 
     /**
      * Get a request attribute.
+     *
+     * @param  string  $key  Attribute name
+     * @param  mixed  $default  Default if not found
+     * @return mixed The attribute value, or default
      */
     public function get(string $key, mixed $default = null): mixed
     {
@@ -333,6 +371,10 @@ class Request
      * Alias for get() — specifically for route parameters.
      *
      * @example $id = $request->route('id');
+     *
+     * @param  string  $key  Route parameter name
+     * @param  mixed  $default  Default if not found
+     * @return mixed The route parameter value, or default
      *
      * @see get()
      */
@@ -346,6 +388,8 @@ class Request
      *
      * Supports the X-HTTP-Method-Override header and the _method
      * POST field for clients that don't support PUT/DELETE.
+     *
+     * @return string Uppercased HTTP method
      */
     private function detectMethod(): string
     {
@@ -372,6 +416,8 @@ class Request
      * Detect the request URI path.
      *
      * Strips the query string and normalizes the path.
+     *
+     * @return string The URI path (e.g. '/users/42')
      */
     private function detectUri(): string
     {

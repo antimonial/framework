@@ -52,11 +52,24 @@ final class Session
         unset($_SESSION['__flash']);
     }
 
+    /**
+     * Check if a key exists in the session.
+     *
+     * @param  string  $key  Session key
+     * @return bool True if the key exists
+     */
     public static function has(string $key): bool
     {
         return isset($_SESSION[$key]);
     }
 
+    /**
+     * Get a value from the session.
+     *
+     * @param  string  $key  Session key
+     * @param  mixed  $default  Default if not found
+     * @return mixed The value, or default
+     */
     public static function get(string $key, mixed $default = null): mixed
     {
         return $_SESSION[$key] ?? $default;
@@ -81,6 +94,10 @@ final class Session
 
     /**
      * Get and forget: returns the value and removes it.
+     *
+     * @param  string  $key  Session key
+     * @param  mixed  $default  Default if not found
+     * @return mixed The value, or default
      */
     public static function pull(string $key, mixed $default = null): mixed
     {
@@ -92,6 +109,9 @@ final class Session
 
     /**
      * Flash data: available on the next request only (then auto-cleared).
+     *
+     * @param  string  $key  Flash key
+     * @param  mixed  $value  Value to flash
      */
     public static function flash(string $key, mixed $value): void
     {
@@ -103,6 +123,10 @@ final class Session
 
     /**
      * Read flash data from the previous request (before it ages out).
+     *
+     * @param  string  $key  Flash key
+     * @param  mixed  $default  Default if not found
+     * @return mixed The flash value, or default
      */
     public static function getFlash(string $key, mixed $default = null): mixed
     {
@@ -113,7 +137,9 @@ final class Session
     }
 
     /**
-     * @param  string|array<int, string>  $key
+     * Remove one or more items from the session.
+     *
+     * @param  string|array<int, string>  $key  Key or array of keys to remove
      */
     public static function forget(string|array $key): void
     {
@@ -129,6 +155,9 @@ final class Session
         }
     }
 
+    /**
+     * Clear all session data.
+     */
     public static function flush(): void
     {
         $_SESSION = [];
@@ -148,6 +177,11 @@ final class Session
         session_regenerate_id($destroy);
     }
 
+    /**
+     * Get the current session id.
+     *
+     * @return string The session id
+     */
     public static function id(): string
     {
         return (string) session_id();

@@ -75,7 +75,7 @@ class Route
      *
      * @example $router->get('/posts/{slug}', ...)->name('posts.show');
      *
-     * @return $this
+     * @param  string  $name  Route name (e.g. 'posts.show')
      */
     public function name(string $name): static
     {
@@ -91,7 +91,6 @@ class Route
      * @example $route->middleware(Auth::class, AdminCheck::class);
      *
      * @param  class-string  ...$middleware  Middleware class names
-     * @return $this
      *
      * @see MiddlewareInterface
      */

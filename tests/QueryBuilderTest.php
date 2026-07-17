@@ -107,9 +107,9 @@ final class QueryBuilderTest extends TestCase
             ->where('status', 'active')
             ->where(function (QueryBuilder $q) {
                 $q->where('age', '>=', 18)
-                  ->where(function (QueryBuilder $qq) {
-                      $qq->where('role', 'admin')->orWhere('role', 'mod');
-                  });
+                    ->where(function (QueryBuilder $qq) {
+                        $qq->where('role', 'admin')->orWhere('role', 'mod');
+                    });
             });
         $this->assertSame(
             'SELECT * FROM users WHERE status = ? AND (age >= ? AND (role = ? OR role = ?))',
@@ -518,7 +518,7 @@ final class QueryBuilderTest extends TestCase
         $this->assertSame('SELECT * FROM users WHERE users.status = ?', $qb->toSql());
     }
 
-    public function test_chain_toSql_does_not_mutate_builder(): void
+    public function test_chain_to_sql_does_not_mutate_builder(): void
     {
         $qb = $this->qb()->where('name', 'Alice');
         $sql1 = $qb->toSql();
@@ -537,5 +537,4 @@ final class QueryBuilderTest extends TestCase
         $qb = new QueryBuilder($this->conn, 'transactions');
         $this->assertSame(500.0, $qb->where('user_id', 1)->sum('amount'));
     }
-
 }

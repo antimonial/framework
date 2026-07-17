@@ -26,6 +26,15 @@ final class CsrfMiddleware implements MiddlewareInterface
 {
     private const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
 
+    /**
+     * Verify CSRF token on state-changing requests.
+     *
+     * Safe methods (GET, HEAD, OPTIONS) pass through untouched.
+     * On mismatch returns a 419 response.
+     *
+     * @param  Request  $request  Incoming HTTP request
+     * @param  callable  $next  Next middleware / controller
+     */
     public function handle(Request $request, callable $next): Response
     {
         if (in_array(strtoupper($request->method()), self::SAFE_METHODS, true)) {

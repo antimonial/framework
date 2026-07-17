@@ -26,6 +26,8 @@ class ErrorHandler
 
     /**
      * Enable debug mode for detailed error reporting.
+     *
+     * @param  bool  $debug  True to enable debug mode
      */
     public static function enableDebug(bool $debug = true): void
     {
@@ -34,6 +36,8 @@ class ErrorHandler
 
     /**
      * Whether debug mode is currently enabled.
+     *
+     * @return bool True if debug mode is active
      */
     public static function isDebug(): bool
     {
@@ -42,6 +46,7 @@ class ErrorHandler
 
     /**
      * Register error, exception, and shutdown handlers.
+     *
      *
      * @see App::run()
      */
@@ -82,6 +87,8 @@ class ErrorHandler
      * Handle uncaught exceptions.
      *
      * Logs the error and renders a 500 response.
+     *
+     * @param  Throwable  $exception  The uncaught exception
      */
     public static function handleException(Throwable $exception): void
     {
@@ -106,6 +113,8 @@ class ErrorHandler
 
     /**
      * Log the exception to the error log.
+     *
+     * @param  Throwable  $exception  Exception to log
      */
     private static function log(Throwable $exception): void
     {
@@ -121,6 +130,8 @@ class ErrorHandler
 
     /**
      * Render an error response (HTML in debug mode, minimal otherwise).
+     *
+     * @param  Throwable  $exception  Exception to display
      */
     private static function render(Throwable $exception): void
     {
@@ -141,6 +152,8 @@ class ErrorHandler
 
     /**
      * Render a detailed debug error page with stack trace.
+     *
+     * @param  Throwable  $exception  Exception to display
      */
     private static function renderDebugPage(Throwable $exception): void
     {

@@ -29,12 +29,22 @@ class View
 
     private static ?ViewEngine $engine = null;
 
+    /**
+     * Set the base view directory.
+     *
+     * Also resets the engine so the new path takes effect immediately.
+     */
     public static function setViewPath(string $path): void
     {
         self::$viewPath = rtrim($path, '/');
         self::$engine = new ViewEngine(self::$viewPath);
     }
 
+    /**
+     * Get the base view directory, with a default fallback.
+     *
+     * @return string The view directory path
+     */
     private static function getViewPath(): string
     {
         if (self::$viewPath === '') {
@@ -44,6 +54,9 @@ class View
         return self::$viewPath;
     }
 
+    /**
+     * Get (or create) the shared ViewEngine instance.
+     */
     private static function engine(): ViewEngine
     {
         if (self::$engine === null) {
@@ -53,11 +66,32 @@ class View
         return self::$engine;
     }
 
+    /**
+     * Render a view to a string.
+     *
+     * @param  string  $path  View path relative to the view directory
+     * @param  array<string, mixed>  $data  Variables extracted into the view
+     * @param  array<string, mixed>|null  $capturedVars  Section variables captured during rendering
+     *
+     * @throws RuntimeException If the template is missing
+     */
     public static function render(string $path, array $data = [], ?array &$capturedVars = null): string
     {
         return self::engine()->render($path, $data);
     }
 
+    /**
+     * Render a view inside an optional layout.
+     *
+     * When a layout is given, the view is rendered first and its output
+     * is injected as the {@code $content} variable in the layout.
+     *
+     * @param  string  $path  View path relative to the view directory
+     * @param  string|null  $layout  Layout path (null = no layout)
+     * @param  array<string, mixed>  $data  Variables for both view and layout
+     *
+     * @throws RuntimeException If the template is missing
+     */
     public static function renderWithLayout(string $path, ?string $layout, array $data = []): string
     {
         if ($layout === null) {

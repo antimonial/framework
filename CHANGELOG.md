@@ -2,6 +2,19 @@
 
 All notable changes to the Antimonial framework are documented here.
 
+## [0.9.1] - 2026-07-17
+
+### Documentation
+- **Complete docblock audit** — All 26 source files reviewed and updated:
+  - 21 methods that had no docblock now documented
+  - ~95 methods completed with `@param`, `@return`, `@throws` tags
+  - 7 duplicate docblock blocks merged (Router::group, Controller::view, Connection::select/insert, QueryBuilder::get)
+  - Corrected `@return $this` → `@return static` (14 methods across QueryBuilder, Route)
+  - Fixed `@csrf` tag-parsing bug in Csrf.php class docblock
+  - Updated QueryBuilder class docblock from "~230 lines" to "~1,050 lines"
+- **README reduced** from ~400 lines to ~120 lines — concise overview with links to Wiki
+- **CHANGELOG expanded** — v0.7.1 entry completed (was incomplete)
+
 ## [0.9.0] - 2026-07-17
 
 ### Added
@@ -51,6 +64,6 @@ All notable changes to the Antimonial framework are documented here.
 
 ## [0.7.1] - 2026-06-23
 
-### Fixed
-- `orWhereRaw()` added for raw WHERE clauses with OR logic
-- Search controller compatibility
+### Added
+- `orWhereRaw()` method on QueryBuilder for raw WHERE clauses with OR logic
+- Project controller for the skeleton application's project listing feature

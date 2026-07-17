@@ -128,14 +128,10 @@ class Connection
      * Execute a SELECT query and return all rows.
      *
      * @param  string  $sql  SQL query with ? placeholders
-     * @param  array  $bindings  Parameter values
-     * @return object[] Array of stdClass objects
+     * @param  array<int, mixed>  $bindings  Parameter values
+     * @return array<object> Array of stdClass objects
      *
      * @throws PDOException If the query fails
-     */
-    /**
-     * @param  array<int, mixed>  $bindings
-     * @return array<object>
      */
     public function select(string $sql, array $bindings = []): array
     {
@@ -151,13 +147,10 @@ class Connection
      * Execute an INSERT query.
      *
      * @param  string  $sql  SQL query with ? placeholders
-     * @param  array  $bindings  Parameter values
+     * @param  array<int, mixed>  $bindings  Parameter values
      * @return string The last inserted row ID
      *
      * @throws PDOException If the query fails
-     */
-    /**
-     * @param  array<int, mixed>  $bindings
      */
     public function insert(string $sql, array $bindings = []): string
     {
@@ -186,7 +179,9 @@ class Connection
     /**
      * Execute a raw SQL statement with bindings.
      *
-     * @param  array<int, mixed>  $bindings
+     * @param  string  $sql  SQL query with ? placeholders
+     * @param  array<int, mixed>  $bindings  Parameter values
+     * @return PDOStatement The prepared and executed statement
      *
      * @throws PDOException If the query fails
      */

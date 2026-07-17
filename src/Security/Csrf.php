@@ -12,8 +12,7 @@ use Antimonial\Session\Session;
  *
  * A single token is kept in the session (inspired by Laravel's CSRF, which
  * stores it server-side). Each HTML form must include the token (via the
- *
- * @csrf view directive or Csrf::field()) and state-changing requests
+ * {@code @csrf} view directive or Csrf::field()) and state-changing requests
  * (POST/PUT/DELETE/PATCH) must verify it. Comparison is timing-safe.
  *
  * No dependencies, no coupled service: the session is the only store, and
@@ -28,6 +27,8 @@ final class Csrf
 
     /**
      * Get the current token, generating one if absent.
+     *
+     * @return string The CSRF token
      */
     public static function token(): string
     {
@@ -47,6 +48,9 @@ final class Csrf
      *
      * Uses hash_equals for constant-time comparison (timing-safe).
      *
+     * @param  string|null  $submitted  Token from the request (may be null)
+     * @return bool True on match
+     *
      * @throws TokenMismatchException When the token is missing or invalid.
      */
     public static function verify(?string $submitted): bool
@@ -64,6 +68,8 @@ final class Csrf
 
     /**
      * Render a hidden input field for use in HTML forms.
+     *
+     * @return string HTML for a hidden _token input
      */
     public static function field(): string
     {

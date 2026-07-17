@@ -31,6 +31,9 @@ final class Filters
 
     /**
      * Register a filter callable.
+     *
+     * @param  string  $name  Filter name used in templates (e.g. "slug")
+     * @param  callable  $fn  The filter implementation
      */
     public static function add(string $name, callable $fn): void
     {
@@ -40,7 +43,9 @@ final class Filters
     /**
      * Apply a filter chain ("a|b:c") to a value.
      *
+     * @param  mixed  $value  The input value to filter
      * @param  string  $chain  Pipe-separated filter names, optionally ":arg"
+     * @return mixed Filtered value
      */
     public static function apply(mixed $value, string $chain): mixed
     {
@@ -72,6 +77,11 @@ final class Filters
 
     // ─── Built-in filters ──────────────────────────────────────
 
+    /**
+     * Escape a value for safe HTML output (XSS-safe).
+     *
+     * Uses htmlspecialchars with ENT_QUOTES and UTF-8 encoding.
+     */
     public static function escape(mixed $value): string
     {
         /** @phpstan-ignore-next-line cast.string (intentional: escape any value to string) */
@@ -80,12 +90,21 @@ final class Filters
         return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
     }
 
+    /**
+     * Coalesce a value to a raw (unescaped) string.
+     */
     public static function raw(mixed $value): string
     {
         /** @phpstan-ignore-next-line cast.string (intentional: coalesce any value to string) */
         return is_string($value) ? $value : (string) $value;
     }
 
+    /**
+     * Get the length of a string or countable value.
+     *
+     * Strings return their byte length; countable values return their count.
+     * All other values return 0.
+     */
     public static function length(mixed $value): int
     {
         if (is_string($value)) {
@@ -98,11 +117,23 @@ final class Filters
         return 0;
     }
 
+    /**
+     * Encode a value as pretty-printed JSON.
+     */
     public static function toJson(mixed $value): string
     {
         return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?: '';
     }
 
+    /**
+     * Format a date value.
+     *
+     * Accepts a DateTimeInterface object, a Unix timestamp, or a date string
+     * parsable by strtotime. Returns the formatted string or an empty string
+     * on failure.
+     *
+     * @param  string  $format  PHP date format (default "Y-m-d")
+     */
     public static function date(mixed $value, string $format = 'Y-m-d'): string
     {
         if ($value instanceof \DateTimeInterface) {

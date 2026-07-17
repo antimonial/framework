@@ -14,7 +14,7 @@ use PDOException;
  * Builds SELECT, INSERT, UPDATE, and DELETE queries by accumulating
  * clauses in arrays, then compiling them to SQL at execution time.
  *
- * This is the largest class in the framework (~230 lines) because
+ * This is the largest class in the framework (~1,050 lines) because
  * SQL has many moving parts. But the pattern is simple:
  *  1. Chain methods to accumulate state
  *  2. Call a terminal method (get, insert, update, delete)
@@ -527,12 +527,9 @@ class QueryBuilder
     /**
      * Execute the query and return all results.
      *
-     * @return object[] Array of stdClass objects
+     * @return array<object>
      *
      * @throws PDOException If the query fails
-     */
-    /**
-     * @return array<object>
      */
     public function get(): array
     {
@@ -556,6 +553,10 @@ class QueryBuilder
      *       ->where('status', 'published')
      *       ->orderBy('created_at', 'DESC')
      *       ->paginate(10, $page);
+     *
+     * @param  int  $perPage  Results per page
+     * @param  int  $page  Current page number (1-based)
+     * @return object{items: array<object>, total: int, perPage: int, currentPage: int, totalPages: int}
      */
     public function paginate(int $perPage = 15, int $page = 1): object
     {
@@ -567,16 +568,18 @@ class QueryBuilder
         $items = $this->limit($perPage)->offset($offset)->get();
 
         return (object) [
-            'items'       => $items,
-            'total'       => $total,
-            'perPage'     => $perPage,
+            'items' => $items,
+            'total' => $total,
+            'perPage' => $perPage,
             'currentPage' => $page,
-            'totalPages'  => max(1, (int) ceil($total / $perPage)),
+            'totalPages' => max(1, (int) ceil($total / $perPage)),
         ];
     }
 
     /**
      * Get the first result row, or null if none found.
+     *
+     * @return ?object First row or null
      *
      * @throws PDOException If the query fails
      */
@@ -593,6 +596,9 @@ class QueryBuilder
      *
      * @example $user = DB::table('users')->find(42);
      *
+     * @param  mixed  $id  Primary key value
+     * @return ?object Found row or null
+     *
      * @throws PDOException If the query fails
      *
      * @see Model::find()
@@ -606,6 +612,9 @@ class QueryBuilder
      * Get a single column value from the first result.
      *
      * @example $email = DB::table('users')->where('id', 1)->value('email');
+     *
+     * @param  string  $column  Column name
+     * @return mixed Column value, or null if no row matched
      *
      * @throws PDOException If the query fails
      */
@@ -647,6 +656,8 @@ class QueryBuilder
     /**
      * Count the number of rows matching the query.
      *
+     * @return int Row count
+     *
      * @throws PDOException If the query fails
      */
     public function count(): int
@@ -669,6 +680,8 @@ class QueryBuilder
     /**
      * Check if any rows match the query.
      *
+     * @return bool True if at least one row matches
+     *
      * @throws PDOException If the query fails
      */
     public function exists(): bool
@@ -678,6 +691,9 @@ class QueryBuilder
 
     /**
      * Calculate the sum of a column.
+     *
+     * @param  string  $column  Column name
+     * @return float Sum value
      *
      * @throws PDOException If the query fails
      */
@@ -691,6 +707,9 @@ class QueryBuilder
     /**
      * Calculate the average of a column.
      *
+     * @param  string  $column  Column name
+     * @return float Average value
+     *
      * @throws PDOException If the query fails
      */
     public function avg(string $column): float
@@ -703,6 +722,9 @@ class QueryBuilder
     /**
      * Get the minimum value of a column.
      *
+     * @param  string  $column  Column name
+     * @return mixed Minimum value, or null if no rows matched
+     *
      * @throws PDOException If the query fails
      */
     public function min(string $column): mixed
@@ -712,6 +734,9 @@ class QueryBuilder
 
     /**
      * Get the maximum value of a column.
+     *
+     * @param  string  $column  Column name
+     * @return mixed Maximum value, or null if no rows matched
      *
      * @throws PDOException If the query fails
      */
@@ -836,6 +861,8 @@ class QueryBuilder
      *
      * @example DB::table('users')->where('id', 42)->increment('views');
      *
+     * @param  string  $column  Column name
+     * @param  int  $amount  Amount to increment by
      * @return int Affected row count
      *
      * @throws PDOException If the update fails
@@ -850,6 +877,8 @@ class QueryBuilder
     /**
      * Decrement a column's value.
      *
+     * @param  string  $column  Column name
+     * @param  int  $amount  Amount to decrement by
      * @return int Affected row count
      *
      * @throws PDOException If the update fails
@@ -891,6 +920,8 @@ class QueryBuilder
 
     /**
      * Compile the accumulated clauses into a SELECT SQL string.
+     *
+     * @return string Compiled SELECT SQL
      */
     private function compileSelect(): string
     {
@@ -939,6 +970,8 @@ class QueryBuilder
 
     /**
      * Compile all WHERE clauses into a single SQL string.
+     *
+     * @return string Compiled WHERE SQL (empty string if no clauses)
      */
     private function compileWheres(): string
     {
@@ -1021,6 +1054,9 @@ class QueryBuilder
      *
      * Used by where()/orWhere() to decide whether the second argument
      * is an operator (e.g. '>') or a bare value for an implicit '='.
+     *
+     * @param  mixed  $value  Value to check
+     * @return bool True if the value is a known SQL operator
      */
     private function isOperator(mixed $value): bool
     {

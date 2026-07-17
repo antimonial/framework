@@ -26,6 +26,10 @@ class ViewEngine
 
     private string $cachePath;
 
+    /**
+     * @param  string  $viewPath  Base view directory
+     * @param  string|null  $cachePath  Compiled template cache directory (defaults to storage/views)
+     */
     public function __construct(string $viewPath, ?string $cachePath = null)
     {
         $this->viewPath = rtrim($viewPath, '/');
@@ -81,6 +85,8 @@ class ViewEngine
      * Called from the footer of a compiled child template. evaluate() reads
      * this flag once the child body (free content + @section blocks) has
      * been captured, and renders the layout with that content.
+     *
+     * @param  string  $layout  Layout template path
      */
     public function beginExtend(string $layout): void
     {
@@ -90,6 +96,8 @@ class ViewEngine
 
     /**
      * Start capturing a section.
+     *
+     * @param  string  $name  Section name (matches @yield in the layout)
      */
     public function section(string $name): void
     {
@@ -111,6 +119,10 @@ class ViewEngine
 
     /**
      * Output a section's content (with optional default).
+     *
+     * @param  string  $name  Section name
+     * @param  string  $default  Fallback text if the section was never set
+     * @return string The section content or the default
      */
     public function yield(string $name, string $default = ''): string
     {
@@ -119,6 +131,10 @@ class ViewEngine
 
     /**
      * Placeholder for @parent (renders the parent layout's slot content).
+     *
+     * Currently a no-op; the slot content is always replaced by children.
+     *
+     * @return string Empty string (for future use)
      */
     public function parent(): string
     {
@@ -130,7 +146,9 @@ class ViewEngine
      *
      * If no data is given, the parent template's variables are inherited.
      *
-     * @param  array<string, mixed>  $data
+     * @param  string  $path  Template path relative to the view directory
+     * @param  array<string, mixed>  $data  Explicit variables for the included template
+     * @return string Rendered output of the included template
      */
     public function include(string $path, array $data = []): string
     {
@@ -146,7 +164,12 @@ class ViewEngine
     /**
      * Resolve a template path to an absolute, safe file path.
      *
-     * @throws RuntimeException
+     * Guards against directory traversal by verifying the resolved path
+     * starts with the view directory.
+     *
+     * @param  string  $path  Template path relative to the view directory
+     *
+     * @throws RuntimeException If the view directory or template does not exist
      */
     private function resolve(string $path): string
     {
@@ -171,6 +194,9 @@ class ViewEngine
      *
      * Includes a compiler version component so that upgrading the framework
      * automatically invalidates all cached views.
+     *
+     * @param  string  $source  Absolute path to the source template
+     * @return string Absolute path to the compiled cache file
      */
     private function compiledPath(string $source): string
     {
@@ -179,6 +205,9 @@ class ViewEngine
 
     /**
      * True if the compiled file is missing or older than the source.
+     *
+     * @param  string  $source  Absolute path to the source template
+     * @param  string  $compiled  Absolute path to the compiled cache file
      */
     private function isExpired(string $source, string $compiled): bool
     {
@@ -195,7 +224,9 @@ class ViewEngine
      * Uses a state stack so nested evaluate() calls (e.g. via @include from
      * inside a @section) do NOT clobber the parent's extending/layout state.
      *
-     * @param  array<string, mixed>  $data
+     * @param  string  $compiled  Absolute path to the compiled PHP file
+     * @param  array<string, mixed>  $data  Template variables
+     * @return string Rendered output
      */
     private function evaluate(string $compiled, array $data): string
     {
@@ -204,8 +235,8 @@ class ViewEngine
         // Push current state onto the stack before resetting for this eval
         $this->evalStack[] = [
             'extendingChild' => $this->extendingChild,
-            'extendLayout'   => $this->extendLayout,
-            'parentData'     => $this->parentData,
+            'extendLayout' => $this->extendLayout,
+            'parentData' => $this->parentData,
         ];
 
         $this->parentData = $data;
@@ -231,8 +262,8 @@ class ViewEngine
             // layout evaluate() pops.
             $this->evalStack[] = [
                 'extendingChild' => false,
-                'extendLayout'   => null,
-                'parentData'     => $data,
+                'extendLayout' => null,
+                'parentData' => $data,
             ];
 
             $result = $this->render(

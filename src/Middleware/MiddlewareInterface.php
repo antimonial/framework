@@ -38,6 +38,7 @@ interface MiddlewareInterface
     /**
      * Handle an incoming request.
      *
+     * @param  Request  $request  Incoming HTTP request
      * @param  callable  $next  callable(Request): Response
      */
     public function handle(Request $request, callable $next): Response;

@@ -24,7 +24,7 @@ use Antimonial\View\View;
  * @example return view('users/index', ['users' => $users], 'layouts/main');
  *
  * @param  string  $path  View path relative to app/Views
- * @param  array  $data  Variables for the view
+ * @param  array<string, mixed>  $data  Variables for the view
  * @param  string|null  $layout  Optional layout to wrap the view
  *
  * @see View::renderWithLayout()
@@ -43,6 +43,7 @@ function view(string $path, array $data = [], ?string $layout = null): Response
  *
  * @example redirect('/login', 302);
  *
+ * @param  string  $url  The URL to redirect to
  * @param  int  $status  HTTP status code (301, 302, etc.)
  *
  * @see Response::redirect()
@@ -56,6 +57,9 @@ function redirect(string $url, int $status = 302): Response
  * Escape HTML to prevent XSS.
  *
  * @example echo e($userInput);
+ *
+ * @param  string|null  $value  Raw string to escape
+ * @return string HTML-escaped string
  */
 function e(?string $value): string
 {
@@ -70,6 +74,10 @@ function e(?string $value): string
  * take precedence over values loaded from .env.
  *
  * @example $dbHost = env('DB_HOST', 'localhost');
+ *
+ * @param  string  $key  Environment variable name
+ * @param  mixed  $default  Default if not set
+ * @return mixed The value, type-cast (true/false/null for common strings)
  */
 function env(string $key, mixed $default = null): mixed
 {
@@ -91,6 +99,10 @@ function env(string $key, mixed $default = null): mixed
  * Generate a URL by named route.
  *
  * @example route('posts.show', ['slug' => 'hello-world'])
+ *
+ * @param  string  $name  Route name (e.g. 'posts.show')
+ * @param  array<string, string>  $params  Route parameter replacements
+ * @return string The generated URL path
  *
  * @throws RuntimeException If the route name is not defined
  */
@@ -114,6 +126,10 @@ function route(string $name, array $params = []): string
  *
  * @example $timezone = config('app.timezone', 'UTC');
  *
+ * @param  string  $key  Dot-notation key (e.g. 'app.timezone')
+ * @param  mixed  $default  Default if key is not found
+ * @return mixed The config value, or default
+ *
  * @see Config::get()
  */
 function config(string $key, mixed $default = null): mixed
@@ -125,6 +141,8 @@ function config(string $key, mixed $default = null): mixed
  * Dump variables and die (debug helper).
  *
  * @example dd($user, $request->all());
+ *
+ * @param  mixed  ...$vars  Variables to inspect
  */
 function dd(mixed ...$vars): never
 {
@@ -140,6 +158,8 @@ function dd(mixed ...$vars): never
 
 /**
  * Dump variables and die (JSON output).
+ *
+ * @param  mixed  ...$vars  Variables to inspect
  */
 function ddj(mixed ...$vars): never
 {

@@ -21,6 +21,8 @@ final class DotEnv
      *
      * No-op if the file does not exist, so it is safe to call unconditionally
      * in the front controller.
+     *
+     * @param  string  $path  Path to the .env file
      */
     public static function load(string $path): void
     {

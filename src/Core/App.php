@@ -159,6 +159,8 @@ class App
      *  - string -> wrapped in an HTML response
      *
      * @param  array{0: class-string, 1: string}|callable  $handler
+     * @param  Request  $request  The incoming request
+     * @return Response The controller's response
      *
      * @throws RuntimeException If the handler returns an unsupported type
      */
@@ -198,7 +200,9 @@ class App
      * the next, and the innermost layer is the controller dispatch.
      *
      * @param  string[]  $middlewares  Class names implementing MiddlewareInterface
+     * @param  Request  $request  The incoming request
      * @param  callable  $core  The final handler (controller dispatch)
+     * @return Response The final response
      *
      * @throws Throwable Any exception from middleware or controller
      *

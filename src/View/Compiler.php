@@ -24,7 +24,7 @@ class Compiler
      * Compiler version — bump this whenever the compilation logic changes
      * to force recompilation of all cached views.
      */
-    public const VERSION = '0.8.0';
+    public const VERSION = '0.9.1';
 
     /**
      * Compile a template file to a PHP file.
@@ -73,6 +73,9 @@ class Compiler
      *   1. Strip @comments.
      *   2. Tokenize with token_get_all() — PHP tokens pass through,
      *      T_INLINE_HTML segments are compiled (directives → PHP).
+     *
+     * @param  string  $value  Raw template content
+     * @return string Compiled PHP source
      */
     public function compileString(string $value): string
     {
@@ -98,6 +101,9 @@ class Compiler
      * <?php ?> blocks.  Each directive is handled independently — no
      * paired-block matching is needed because PHP's own parser will
      * resolve nesting (if/endif, foreach/endforeach, etc.) at runtime.
+     *
+     * @param  string  $html  Raw HTML segment from the template
+     * @return string PHP code with directives replaced
      */
     private function compileHtml(string $html): string
     {
@@ -134,22 +140,24 @@ class Compiler
                 return $this->openBlock($m[1], $m[2]);
             },
             '/@elseif'.$this->exprPattern().'/' => fn ($m) => "<?php elseif{$m[1]}: ?>",
-            '/@else\b(?!if)/'                                  => fn ()   => '<?php else: ?>',
+            '/@else\b(?!if)/' => fn () => '<?php else: ?>',
             // Switch case/default — MUST be before closers so @case/@default
             // run before @endswitch pops the switchStack.
-            '/@case'.$this->exprPattern().'/'     => function ($m) {
+            '/@case'.$this->exprPattern().'/' => function ($m) {
                 $val = substr($m[1], 1, -1);
                 if (! empty($this->switchStack)) {
                     $idx = array_key_last($this->switchStack);
                     $sw = $this->switchStack[$idx];
                     $keyword = $sw['firstCase'] ? 'if' : 'elseif';
                     $this->switchStack[$idx]['firstCase'] = false;
+
                     return "<?php {$keyword} ({$sw['expr']} === {$val}): ?>\n";
                 }
+
                 return "<?php case {$val}: ?>\n";
             },
-            '/@default\b/'                        => fn ()   => ! empty($this->switchStack) ? "<?php else: ?>\n" : "<?php default: ?>\n",
-            '/@break\b/'                          => fn ()   => "<?php break; ?>\n",
+            '/@default\b/' => fn () => ! empty($this->switchStack) ? "<?php else: ?>\n" : "<?php default: ?>\n",
+            '/@break\b/' => fn () => "<?php break; ?>\n",
             // Atomic closers — explicit named closer first, then @end as universal.
             // These run AFTER @case/@default so the switchStack is still populated.
             '/@(endif|endunless|endisset|endempty|endforeach|endfor|endwhile|endswitch|endsection)\b/' => function ($m) {
@@ -167,14 +175,15 @@ class Compiler
                     'section' => '<?php $__engine->endSection(); ?>',
                     default => "<?php end{$type}; ?>",
                 };
+
                 return $php;
             },
             // Inline helpers
-            '/@include'.$this->exprPattern().'/'  => fn ($m) => "<?php echo \$__engine->include{$m[1]}; ?>",
-            '/@yield'.$this->exprPattern().'/'    => fn ($m) => "<?php echo \$__engine->yield{$m[1]}; ?>",
-            '/@parent\b'.$this->exprPattern().'/' => fn ()   => '<?php echo $__engine->parent(); ?>',
-            '/@set'.$this->exprPattern().'/'      => fn ($m) => $this->compileSet($m[1]),
-            '/@csrf\b/'                           => fn ()   => '<?php echo \\Antimonial\\Security\\Csrf::field(); ?>',
+            '/@include'.$this->exprPattern().'/' => fn ($m) => "<?php echo \$__engine->include{$m[1]}; ?>",
+            '/@yield'.$this->exprPattern().'/' => fn ($m) => "<?php echo \$__engine->yield{$m[1]}; ?>",
+            '/@parent\b'.$this->exprPattern().'/' => fn () => '<?php echo $__engine->parent(); ?>',
+            '/@set'.$this->exprPattern().'/' => fn ($m) => $this->compileSet($m[1]),
+            '/@csrf\b/' => fn () => '<?php echo \\Antimonial\\Security\\Csrf::field(); ?>',
         ];
 
         do {
@@ -201,6 +210,10 @@ class Compiler
 
     /**
      * Emit PHP for a block-opening directive and push its type.
+     *
+     * @param  string  $type  Block type (if, foreach, etc.)
+     * @param  string  $expr  The parenthesised expression, with @end stripped
+     * @return string Compiled PHP opening block
      */
     private function openBlock(string $type, string $expr): string
     {
@@ -208,16 +221,16 @@ class Compiler
         $compiledExpr = $this->compileExpr($expr);
 
         $php = match ($type) {
-            'if'      => "<?php if{$compiledExpr}: ?>",
-            'unless'  => "<?php if (!( {$compiledExpr} )): ?>",
+            'if' => "<?php if{$compiledExpr}: ?>",
+            'unless' => "<?php if (!( {$compiledExpr} )): ?>",
             'foreach' => "<?php foreach{$compiledExpr}: ?>",
-            'for'     => "<?php for{$compiledExpr}: ?>",
-            'while'   => "<?php while{$compiledExpr}: ?>",
-            'switch'  => $this->openSwitch($compiledExpr),
-            'isset'   => "<?php if (isset{$compiledExpr}): ?>",
-            'empty'   => "<?php if (empty{$compiledExpr}): ?>",
+            'for' => "<?php for{$compiledExpr}: ?>",
+            'while' => "<?php while{$compiledExpr}: ?>",
+            'switch' => $this->openSwitch($compiledExpr),
+            'isset' => "<?php if (isset{$compiledExpr}): ?>",
+            'empty' => "<?php if (empty{$compiledExpr}): ?>",
             'section' => "<?php \$__engine->section{$expr}; ?>",
-            default   => '',
+            default => '',
         };
 
         $this->blockStack[] = $type;
@@ -227,6 +240,9 @@ class Compiler
 
     /**
      * Emit PHP for a standard @end<type> closer and pop the stack.
+     *
+     * @param  string  $type  The full closer name (e.g. "endif", "endforeach")
+     * @return string Compiled PHP closing block
      */
     private function closeBlock(string $type): string
     {
@@ -254,7 +270,7 @@ class Compiler
 
     /**
      * @var list<array{expr: string, firstCase: bool}> Stack of switch
-     *      state for rewriting @case/@default to if/elseif/else
+     *                                                 state for rewriting @case/@default to if/elseif/else
      */
     private array $switchStack = [];
 
@@ -262,11 +278,14 @@ class Compiler
      * Open a @switch block — we rewrite @case/@default to @if/elseif
      * because PHP does not allow T_INLINE_HTML inside a switch/case
      * alternative-syntax block.
+     *
+     * @param  string  $expr  The switch expression
+     * @return string Always empty (switch content is rewritten inline)
      */
     private function openSwitch(string $expr): string
     {
         $this->switchStack[] = [
-            'expr'      => trim($expr, '()'),
+            'expr' => trim($expr, '()'),
             'firstCase' => true,
         ];
 
@@ -275,6 +294,8 @@ class Compiler
 
     /**
      * Close the current @switch block (rewritten).
+     *
+     * @return string "<?php endif; ?>" (the rewritten closer)
      */
     private function closeSwitch(): string
     {
@@ -285,6 +306,9 @@ class Compiler
 
     /**
      * Compile a @set directive body to PHP.
+     *
+     * @param  string  $body  The assignment expression including parentheses
+     * @return string PHP assignment statement
      */
     private function compileSet(string $body): string
     {
@@ -303,6 +327,9 @@ class Compiler
      *
      * Transforms  ($x|length > 0)  →  (Filters::apply($x, 'length') > 0)
      * so that filters work in @if, @for, etc.
+     *
+     * @param  string  $expr  The parenthesised expression
+     * @return string Expression with filter pipes replaced
      */
     private function compileExpr(string $expr): string
     {
@@ -316,12 +343,13 @@ class Compiler
                     $name = $fm[1];
                     $args = $fm[2] ?? null;
                     if ($args !== null) {
-                        $filters[] = $name . ':' . $args;
+                        $filters[] = $name.':'.$args;
                     } else {
                         $filters[] = $name;
                     }
                 }
-                return "\\Antimonial\\View\\Filters::apply({$var}, " . var_export($filters, true) . ")";
+
+                return "\\Antimonial\\View\\Filters::apply({$var}, ".var_export($filters, true).')';
             },
             $expr
         ) ?? $expr;
@@ -331,6 +359,8 @@ class Compiler
 
     /**
      * Regex pattern for matching a parenthesised expression.
+     *
+     * @return string A recursive regex pattern
      */
     private function exprPattern(): string
     {
@@ -341,6 +371,9 @@ class Compiler
 
     /**
      * Compile raw {{{ }}} then escaped {{ }} (with optional |filters).
+     *
+     * @param  string  $value  HTML with echo delimiters
+     * @return string Compiled PHP echo statements
      */
     private function compileEchos(string $value): string
     {

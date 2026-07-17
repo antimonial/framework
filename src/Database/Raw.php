@@ -29,6 +29,8 @@ class Raw
 
     /**
      * Return the raw expression as a string.
+     *
+     * @return string The raw SQL expression
      */
     public function __toString(): string
     {

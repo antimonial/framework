@@ -16,7 +16,7 @@ final class RouterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->router = new Router();
+        $this->router = new Router;
         $_GET = [];
         $_POST = [];
         $_SERVER = ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/'];

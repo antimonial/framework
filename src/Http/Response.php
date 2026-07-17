@@ -49,6 +49,8 @@ class Response
 
     /**
      * Set the HTTP status code.
+     *
+     * @param  int  $code  HTTP status code
      */
     public function status(int $code): static
     {
@@ -59,6 +61,8 @@ class Response
 
     /**
      * Get the current status code.
+     *
+     * @return int HTTP status code
      */
     public function getStatusCode(): int
     {
@@ -90,6 +94,8 @@ class Response
 
     /**
      * Set the response body.
+     *
+     * @param  string  $content  Body content
      */
     public function body(string $content): static
     {
@@ -100,6 +106,8 @@ class Response
 
     /**
      * Get the current response body.
+     *
+     * @return string The response body
      */
     public function getBody(): string
     {

@@ -74,7 +74,9 @@ class Router
      *
      * @example $router->get('/users/{id}', [UserController::class, 'show']);
      *
+     * @param  string  $path  URI pattern (e.g. '/users/{id}')
      * @param  Closure|array{0: class-string, 1: string}  $handler
+     * @return Route The registered Route instance
      */
     public function get(string $path, Closure|array $handler): Route
     {
@@ -86,7 +88,9 @@ class Router
      *
      * @example $router->post('/users', [UserController::class, 'store']);
      *
+     * @param  string  $path  URI pattern
      * @param  Closure|array{0: class-string, 1: string}  $handler
+     * @return Route The registered Route instance
      */
     public function post(string $path, Closure|array $handler): Route
     {
@@ -98,7 +102,9 @@ class Router
      *
      * @example $router->put('/users/{id}', [UserController::class, 'update']);
      *
+     * @param  string  $path  URI pattern
      * @param  Closure|array{0: class-string, 1: string}  $handler
+     * @return Route The registered Route instance
      */
     public function put(string $path, Closure|array $handler): Route
     {
@@ -110,7 +116,9 @@ class Router
      *
      * @example $router->delete('/users/{id}', [UserController::class, 'destroy']);
      *
+     * @param  string  $path  URI pattern
      * @param  Closure|array{0: class-string, 1: string}  $handler
+     * @return Route The registered Route instance
      */
     public function delete(string $path, Closure|array $handler): Route
     {
@@ -148,10 +156,7 @@ class Router
      *
      * @param  string  $prefix  URI prefix (e.g. '/api')
      * @param  callable  $callback  Receives this Router instance
-     * @param  string[]  $middleware  Middleware class names applied to all routes in the group
-     */
-    /**
-     * @param  array<int, class-string>  $middleware
+     * @param  array<int, class-string>  $middleware  Middleware class names applied to all routes in the group
      */
     public function group(string $prefix, callable $callback, array $middleware = []): void
     {
@@ -224,6 +229,8 @@ class Router
     /**
      * Create and store a route.
      *
+     * @param  string  $method  HTTP method
+     * @param  string  $path  URI pattern
      * @param  Closure|array{0: class-string, 1: string}  $handler
      * @return Route The registered Route instance
      */
@@ -253,6 +260,9 @@ class Router
 
     /**
      * Prepend the current group prefix to a path.
+     *
+     * @param  string  $path  Original route path
+     * @return string Path with group prefix applied
      */
     private function applyGroupPrefix(string $path): string
     {

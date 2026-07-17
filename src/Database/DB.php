@@ -36,6 +36,7 @@ class DB
      * Reads config from 'database.connections.{default}' on first call.
      *
      * @param  array<string, mixed>|null  $config  Optional config override
+     * @return Connection The connection instance
      *
      * @throws PDOException If the connection fails
      *
@@ -64,6 +65,9 @@ class DB
     /**
      * Create a QueryBuilder for the given table.
      *
+     * @param  string  $table  Table name
+     * @return QueryBuilder A new query builder instance
+     *
      * @see QueryBuilder
      */
     public static function table(string $table): QueryBuilder
@@ -86,6 +90,8 @@ class DB
 
     /**
      * Get the underlying Connection instance.
+     *
+     * @return Connection The connection instance
      *
      * @see Connection
      */
