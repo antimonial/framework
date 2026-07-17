@@ -10,7 +10,6 @@ use \Antimonial\View\Compiler;
 /**
  * Built-in template engine for Antimonial.
  *
- * Implements the View engine contract (render(string, array): string).
  * Compiles templates to PHP once, caches them in a storage dir, and
  * includes the cached file. Auto-escaping is on by default.
  *
@@ -18,7 +17,7 @@ use \Antimonial\View\Compiler;
  * are captured and injected into the parent's @yield slots. Only one
  * @extends per template is supported (matching Blade/Twig).
  *
- * @see View::setEngine()
+ * @see View
  * @see Compiler
  */
 class ViewEngine
