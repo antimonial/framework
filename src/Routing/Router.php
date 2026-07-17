@@ -6,7 +6,7 @@ namespace Antimonial\Routing;
 
 use Antimonial\Core\App;
 use Antimonial\Core\ErrorHandler;
-use Antimonial\Core\HttpNotFoundException;
+use Antimonial\Routing\HttpNotFoundException;
 use Antimonial\Http\Request;
 use Antimonial\Middleware\MiddlewareInterface;
 use Closure;

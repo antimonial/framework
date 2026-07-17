@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Antimonial\Controller;
 
-use Antimonial\Core\ValidationException;
+use Antimonial\Http\ValidationException;
 use Antimonial\Http\Request;
 use Antimonial\Http\Response;
 use Antimonial\View\View;

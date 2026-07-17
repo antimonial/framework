@@ -6,7 +6,9 @@ namespace Antimonial\Core;
 
 use Antimonial\Http\Request;
 use Antimonial\Http\Response;
+use Antimonial\Http\ValidationException;
 use Antimonial\Middleware\MiddlewareInterface;
+use Antimonial\Routing\HttpNotFoundException;
 use Antimonial\Routing\Router;
 use Antimonial\Session\Session;
 use Antimonial\View\View;
