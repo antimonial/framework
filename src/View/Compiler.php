@@ -84,7 +84,7 @@ class Compiler
         $footer = '';
 
         $value = preg_replace_callback(
-            '/^[ \t]*@extends' . $this->exprPattern() . '\s*$/m',
+            '/^[ \t]*@extends' . $this->exprPattern() . '/',
             function ($m) use (&$footer) {
                 $footer .= "<?php \$__engine->beginExtend({$m[1]}); ?>\n";
                 return '';
@@ -92,8 +92,20 @@ class Compiler
             $value
         ) ?? $value;
 
+        // Paired blocks: @name(expr) ... @endname. The body is re-compiled
+        // (recursion) so nested blocks resolve. Following Blade's approach,
+        // @else / @elseif / @endif are handled as ATOMIC directives below
+        // (not post-processed inside the body), which is robust regardless
+        // of where they appear on the line.
         $pairPattern = '/@(if|unless|foreach|for|while|switch|isset|empty|section)\b'
             . $this->exprPattern() . '([\s\S]*?)@end\1/s';
+
+        // Standalone (atomic) directives handled in the same iteration:
+        // @elseif(expr), @else, @endif, @endunless, @endisset, @endempty.
+        // @elseif carries its own (expr) and gets a dedicated pattern to
+        // avoid PCRE group-numbering conflicts when exprPattern recurses.
+        $elseifPattern = '/@elseif' . $this->exprPattern() . '/';
+        $atomicPattern = '/@(else|endif|endunless|endisset|endempty)\b/';
 
         $inlinePattern = '/@(include|yield|parent|set)\b' . $this->exprPattern() . '/';
 
@@ -109,6 +121,7 @@ class Compiler
 
         // Iterate until stable. preg_replace is not nested, so the innermost
         // blocks resolve first; repeated passes unwrap parents (@if/@foreach).
+        // Atomic directives (@else etc.) are replaced alongside paired ones.
         do {
             $prev = $value;
 
@@ -117,6 +130,22 @@ class Compiler
                 function ($m) {
                     $inner = $this->compileStatements($m[3]);
                     return $this->compileDirective($m[1], $m[2], $inner, true);
+                },
+                $value
+            ) ?? $value;
+
+            $value = preg_replace_callback(
+                $elseifPattern,
+                function ($m) {
+                    return $this->compileAtomic('elseif' . $m[1]);
+                },
+                $value
+            ) ?? $value;
+
+            $value = preg_replace_callback(
+                $atomicPattern,
+                function ($m) {
+                    return $this->compileAtomic($m[1]);
                 },
                 $value
             ) ?? $value;
@@ -149,6 +178,34 @@ class Compiler
     }
 
     /**
+     * Compile an atomic (standalone) directive: @else, @elseif(expr),
+     * @endif, @endunless, @endisset, @endempty.
+     *
+     * These are replaced in the iteration loop (Blade-style) rather than
+     * post-processed inside a parent block, so their position on the line
+     * does not matter.
+     *
+     * @param string $token The matched directive text (e.g. "elseif($x)")
+     * @return string
+     */
+    private function compileAtomic(string $token): string
+    {
+        if (str_starts_with($token, 'elseif')) {
+            preg_match('/^elseif' . $this->exprPattern() . '$/', $token, $m);
+            return "<?php elseif{$m[1]}: ?>";
+        }
+
+        return match ($token) {
+            'else'       => '<?php else: ?>',
+            'endif'      => '<?php endif; ?>',
+            'endunless'  => '<?php endif; ?>',
+            'endisset'   => '<?php endif; ?>',
+            'endempty'   => '<?php endif; ?>',
+            default      => '',
+        };
+    }
+
+    /**
      * Map a directive name + expression to PHP.
      *
      * @param string $name   Directive name (if, foreach, include, ...)
@@ -159,12 +216,6 @@ class Compiler
      */
     private function compileDirective(string $name, string $expr, string $inner, bool $paired): string
     {
-        // Normalize @else / @elseif inside the body of if/unless into PHP.
-        if (($name === 'if' || $name === 'unless') && $inner !== '') {
-            $inner = preg_replace('/^[ \t]*@elseif(\(.*?\))/m', '<?php elseif$1: ?>', $inner);
-            $inner = preg_replace('/^[ \t]*@else\b/m', '<?php else: ?>', $inner);
-        }
-
         $open = match ($name) {
             'if'      => "<?php if{$expr}: ?>",
             'unless'  => "<?php if (!( {$expr} )): ?>",

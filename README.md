@@ -124,6 +124,14 @@ emits raw, trusted HTML.
   {{ $n-- }}
 @endwhile
 
+@isset($user)
+  <p>{{ $user['name'] }}</p>
+@endisset
+
+@empty($cart)
+  <p>Your cart is empty.</p>
+@endempty
+
 @set($total = count($users))   {{-- @set($var = expr) --}}
 @php echo time(); @endphp      {{-- raw PHP block --}}
 
