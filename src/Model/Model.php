@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Antimonial\Model;
 
-use PDOException;
-
-use Antimonial\Core\Config;
 use Antimonial\Database\Connection;
 use Antimonial\Database\DB;
 use Antimonial\Database\QueryBuilder;
+use PDOException;
 
 /**
  * Base model class.
@@ -43,34 +41,26 @@ class Model
      *
      * If empty, auto-detected from the class name:
      *  User -> users, BlogPost -> blog_posts
-     *
-     * @var string
      */
     protected string $table = '';
 
     /**
      * Primary key column name.
-     *
-     * @var string
      */
     protected string $primaryKey = 'id';
 
     /**
      * Whether to auto-manage created_at/updated_at timestamps.
-     *
-     * @var bool
      */
     protected bool $timestamps = false;
 
     /**
      * The database connection instance.
-     *
-     * @var Connection|null
      */
     protected ?Connection $db = null;
 
     /**
-     * @param Connection|null $db Optional connection override
+     * @param  Connection|null  $db  Optional connection override
      */
     public function __construct(?Connection $db = null)
     {
@@ -86,8 +76,8 @@ class Model
      *
      * This is the main entry point for custom queries.
      *
-     * @return QueryBuilder
      * @throws PDOException If the database connection fails
+     *
      * @see QueryBuilder
      */
     public function query(): QueryBuilder
@@ -100,9 +90,8 @@ class Model
      *
      * @example $user = (new User())->find(42);
      *
-     * @param mixed $id
-     * @return object|null
      * @throws PDOException If the query fails
+     *
      * @see QueryBuilder::find()
      */
     public function find(mixed $id): ?object
@@ -114,6 +103,7 @@ class Model
      * Get all rows from the table.
      *
      * @return object[]
+     *
      * @throws PDOException If the query fails
      */
     public function all(): array
@@ -127,11 +117,6 @@ class Model
      * Convenience wrapper that returns a QueryBuilder for chaining.
      *
      * @example $user->where('active', true)->query()->orderBy('name')->get();
-     *
-     * @param string $column
-     * @param mixed  $operatorOrValue
-     * @param mixed  $value
-     * @return QueryBuilder
      */
     public function where(string $column, mixed $operatorOrValue, mixed $value = null): QueryBuilder
     {
@@ -143,9 +128,11 @@ class Model
      *
      * @example $id = (new User())->insert(['name' => 'John', 'email' => 'john@...']);
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return string Last inserted ID
+     *
      * @throws PDOException If the insert fails
+     *
      * @see QueryBuilder::insert()
      */
     public function insert(array $data): string
@@ -162,10 +149,11 @@ class Model
      *
      * Example: (new User())->update(42, ['name' => 'Jane']);
      *
-     * @param mixed                $id
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return int Affected row count
+     *
      * @throws PDOException If the update fails
+     *
      * @see QueryBuilder::update()
      */
     public function update(mixed $id, array $data): int
@@ -184,9 +172,10 @@ class Model
      *
      * Example: (new User())->delete(42);
      *
-     * @param mixed $id
      * @return int Affected row count
+     *
      * @throws PDOException If the delete fails
+     *
      * @see QueryBuilder::delete()
      */
     public function delete(mixed $id): int
@@ -199,8 +188,8 @@ class Model
     /**
      * Get the database connection, creating one if needed.
      *
-     * @return Connection
      * @throws PDOException If the connection fails
+     *
      * @see DB::connection()
      */
     protected function getConnection(): Connection
@@ -208,6 +197,7 @@ class Model
         if ($this->db === null) {
             $this->db = DB::connection();
         }
+
         return $this->db;
     }
 
@@ -220,8 +210,6 @@ class Model
      *  BlogPost -> blog_posts
      *  Category -> categorys   (naive 's' suffix — set $table explicitly
      *                           for irregular plurals like "categories")
-     *
-     * @return string
      */
     private function guessTableName(): string
     {
@@ -234,15 +222,14 @@ class Model
         $name = strtolower($name);
 
         // Basic pluralization (just adds 's')
-        return $name . 's';
+        return $name.'s';
     }
 
     /**
      * Add timestamp fields to the data array.
      *
-     * @param array<string, mixed> &$data
-     * @param bool                 $isInsert True for INSERT, false for UPDATE
-     * @return void
+     * @param  array<string, mixed>  &$data
+     * @param  bool  $isInsert  True for INSERT, false for UPDATE
      */
     private function addTimestamps(array &$data, bool $isInsert): void
     {

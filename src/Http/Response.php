@@ -49,20 +49,16 @@ class Response
 
     /**
      * Set the HTTP status code.
-     *
-     * @param int $code
-     * @return static
      */
     public function status(int $code): static
     {
         $this->statusCode = $code;
+
         return $this;
     }
 
     /**
      * Get the current status code.
-     *
-     * @return int
      */
     public function getStatusCode(): int
     {
@@ -72,13 +68,13 @@ class Response
     /**
      * Set a response header.
      *
-     * @param string $name  Header name (e.g. 'Content-Type')
-     * @param string $value Header value
-     * @return static
+     * @param  string  $name  Header name (e.g. 'Content-Type')
+     * @param  string  $value  Header value
      */
     public function header(string $name, string $value): static
     {
         $this->headers[$name] = $value;
+
         return $this;
     }
 
@@ -94,20 +90,16 @@ class Response
 
     /**
      * Set the response body.
-     *
-     * @param string $content
-     * @return static
      */
     public function body(string $content): static
     {
         $this->body = $content;
+
         return $this;
     }
 
     /**
      * Get the current response body.
-     *
-     * @return string
      */
     public function getBody(): string
     {
@@ -122,9 +114,9 @@ class Response
      *
      * @example return (new Response())->json(['id' => 1, 'name' => 'John']);
      *
-     * @param mixed $data   Data to encode (arrays, objects, etc.)
-     * @param int   $status Optional status code
-     * @return static
+     * @param  mixed  $data  Data to encode (arrays, objects, etc.)
+     * @param  int  $status  Optional status code
+     *
      * @throws JsonException If encoding fails
      */
     public function json(mixed $data, int $status = 200): static
@@ -134,6 +126,7 @@ class Response
         }
         $this->headers['Content-Type'] = 'application/json; charset=UTF-8';
         $this->body = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+
         return $this;
     }
 
@@ -142,34 +135,34 @@ class Response
      *
      * @example return (new Response())->redirect('/login', 302);
      *
-     * @param string $url    The URL to redirect to
-     * @param int    $status HTTP status (301, 302, 303, 307, 308)
-     * @return static
+     * @param  string  $url  The URL to redirect to
+     * @param  int  $status  HTTP status (301, 302, 303, 307, 308)
      */
     public function redirect(string $url, int $status = 302): static
     {
         $this->statusCode = $status;
         $this->headers['Location'] = $url;
+
         return $this;
     }
 
     /**
      * Set a cookie.
      *
-     * @param string $name    Cookie name
-     * @param string $value   Cookie value
-     * @param int    $expires Lifetime in seconds (0 = until browser closes)
-     * @return static
+     * @param  string  $name  Cookie name
+     * @param  string  $value  Cookie value
+     * @param  int  $expires  Lifetime in seconds (0 = until browser closes)
      */
     public function setCookie(string $name, string $value, int $expires = 0): static
     {
         setcookie($name, $value, [
-            'expires'  => $expires > 0 ? time() + $expires : 0,
-            'path'     => '/',
-            'secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
-            'httponly'  => true,
+            'expires' => $expires > 0 ? time() + $expires : 0,
+            'path' => '/',
+            'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+            'httponly' => true,
             'samesite' => 'Lax',
         ]);
+
         return $this;
     }
 
@@ -177,8 +170,6 @@ class Response
      * Send the response to the client.
      *
      * Sets the status code, sends all headers, and outputs the body.
-     *
-     * @return void
      */
     public function send(): void
     {
@@ -189,13 +180,14 @@ class Response
         if (headers_sent()) {
             echo $this->body;
             $this->sent = true;
+
             return;
         }
 
         http_response_code($this->statusCode);
 
         foreach (['X-Content-Type-Options' => 'nosniff', 'X-Frame-Options' => 'SAMEORIGIN'] as $name => $value) {
-            if (!isset($this->headers[$name])) {
+            if (! isset($this->headers[$name])) {
                 header("{$name}: {$value}");
             }
         }

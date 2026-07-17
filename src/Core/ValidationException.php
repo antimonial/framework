@@ -20,7 +20,7 @@ class ValidationException extends RuntimeException
     private array $errors;
 
     /**
-     * @param array<string, string[]> $errors Validation errors
+     * @param  array<string, string[]>  $errors  Validation errors
      */
     public function __construct(array $errors)
     {

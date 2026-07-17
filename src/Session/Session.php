@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Antimonial\Session;
 
+use Antimonial\Security\Csrf;
+
 /**
  * Minimal server-side session, built on PHP's native $_SESSION.
  *
@@ -15,7 +17,7 @@ namespace Antimonial\Session;
  * Start it once (e.g. from App::run or a bootstrap file) and read/write
  * anywhere via the static API.
  *
- * @see \Antimonial\Security\Csrf  uses the session to store its token.
+ * @see Csrf  uses the session to store its token.
  */
 final class Session
 {
@@ -28,14 +30,14 @@ final class Session
      * session is created/resumed; on later calls (a new request resuming
      * the session) any flash data from the previous request is aged out.
      *
-     * @param array<string, mixed> $options session_start() options
-     * @return void
+     * @param  array<string, mixed>  $options  session_start() options
      */
     public static function start(array $options = []): void
     {
         if (self::$started) {
             // Subsequent resume: drop flash written on the previous request.
             unset($_SESSION['__flash']);
+
             return;
         }
 
@@ -50,20 +52,11 @@ final class Session
         unset($_SESSION['__flash']);
     }
 
-    /**
-     * @param string $key
-     * @return bool
-     */
     public static function has(string $key): bool
     {
         return isset($_SESSION[$key]);
     }
 
-    /**
-     * @param string $key
-     * @param mixed $default
-     * @return mixed
-     */
     public static function get(string $key, mixed $default = null): mixed
     {
         return $_SESSION[$key] ?? $default;
@@ -72,9 +65,7 @@ final class Session
     /**
      * Put one or many items into the session.
      *
-     * @param string|array<string, mixed> $key
-     * @param mixed                       $value
-     * @return void
+     * @param  string|array<string, mixed>  $key
      */
     public static function put(string|array $key, mixed $value = null): void
     {
@@ -82,6 +73,7 @@ final class Session
             foreach ($key as $k => $v) {
                 $_SESSION[$k] = $v;
             }
+
             return;
         }
         $_SESSION[$key] = $value;
@@ -89,29 +81,17 @@ final class Session
 
     /**
      * Get and forget: returns the value and removes it.
-     *
-     * @param string $key
-     * @param mixed  $default
-     * @return mixed
-     */
-    /**
-     * @param string $key
-     * @param mixed $default
-     * @return mixed
      */
     public static function pull(string $key, mixed $default = null): mixed
     {
         $value = self::get($key, $default);
         self::forget($key);
+
         return $value;
     }
 
     /**
      * Flash data: available on the next request only (then auto-cleared).
-     *
-     * @param string $key
-     * @param mixed  $value
-     * @return void
      */
     public static function flash(string $key, mixed $value): void
     {
@@ -123,25 +103,27 @@ final class Session
 
     /**
      * Read flash data from the previous request (before it ages out).
-     *
-     * @param string $key
-     * @param mixed  $default
-     * @return mixed
      */
     public static function getFlash(string $key, mixed $default = null): mixed
     {
         /** @var array<string, mixed> $flash */
         $flash = $_SESSION['__flash'] ?? [];
+
         return $flash[$key] ?? $default;
     }
 
-    public static function forget(string|array<int, string> $key): void
+    /**
+     * @param  string|array<int, string>  $key
+     */
+    public static function forget(string|array $key): void
     {
         if (is_string($key)) {
             unset($_SESSION[$key]);
+
             return;
         }
 
+        /** @var array<int, string> $key */
         foreach ($key as $k => $v) {
             unset($_SESSION[$k]);
         }
@@ -155,12 +137,7 @@ final class Session
     /**
      * Regenerate the session id (call after login / privilege change).
      *
-     * @param bool $destroy Whether to destroy the old session data.
-     * @return void
-     */
-    /**
-     * @param bool $destroy
-     * @return void
+     * @param  bool  $destroy  Whether to destroy the old session data.
      */
     public static function regenerate(bool $destroy = false): void
     {
@@ -171,9 +148,6 @@ final class Session
         session_regenerate_id($destroy);
     }
 
-    /**
-     * @return string
-     */
     public static function id(): string
     {
         return (string) session_id();

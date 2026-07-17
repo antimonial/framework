@@ -7,6 +7,7 @@ namespace Antimonial\Controller;
 use Antimonial\Core\ValidationException;
 use Antimonial\Http\Request;
 use Antimonial\Http\Response;
+use Antimonial\View\View;
 
 /**
  * Base controller class.
@@ -29,14 +30,14 @@ class Controller
      *
      * @example return $this->view('users/index', ['users' => $users], 'layouts/main');
      *
-     * @param string      $path   View path relative to app/Views (e.g. 'users/index')
-     * @param array       $data   Variables available in the view
-     * @param string|null $layout Optional layout to wrap the view in
-     * @return Response
-     * @see \Antimonial\View\View::renderWithLayout()
+     * @param  string  $path  View path relative to app/Views (e.g. 'users/index')
+     * @param  array  $data  Variables available in the view
+     * @param  string|null  $layout  Optional layout to wrap the view in
+     *
+     * @see View::renderWithLayout()
      */
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     protected function view(string $path, array $data = [], ?string $layout = null): Response
     {
@@ -48,14 +49,14 @@ class Controller
      *
      * @example return $this->json(['users' => $users]);
      *
-     * @param mixed $data   Data to encode (arrays, objects, etc.)
-     * @param int   $status HTTP status code
-     * @return Response
+     * @param  mixed  $data  Data to encode (arrays, objects, etc.)
+     * @param  int  $status  HTTP status code
+     *
      * @see Response::json()
      */
     protected function json(mixed $data, int $status = 200): Response
     {
-        return (new Response())->json($data, $status);
+        return (new Response)->json($data, $status);
     }
 
     /**
@@ -63,9 +64,9 @@ class Controller
      *
      * @example return $this->redirect('/users/42');
      *
-     * @param string $url    The URL to redirect to
-     * @param int    $status HTTP status (301, 302, etc.)
-     * @return Response
+     * @param  string  $url  The URL to redirect to
+     * @param  int  $status  HTTP status (301, 302, etc.)
+     *
      * @see redirect()
      */
     protected function redirect(string $url, int $status = 302): Response
@@ -77,14 +78,12 @@ class Controller
      * Redirect back to the previous page (HTTP_REFERER).
      *
      * Falls back to '/' if no Referer header is present.
-     *
-     * @param Request $request
-     * @return Response
      */
     protected function back(Request $request): Response
     {
         /** @var string $referer */
         $referer = $request->header('referer', '/') ?? '/';
+
         return redirect($referer);
     }
 
@@ -110,10 +109,11 @@ class Controller
      *       'email' => 'required|email',
      *   ]);
      *
-     * @param Request               $request
-     * @param array<string, string> $rules  Field name -> pipe-separated rules
+     * @param  array<string, string>  $rules  Field name -> pipe-separated rules
      * @return array<string, mixed> Validated data
+     *
      * @throws ValidationException If validation fails
+     *
      * @see ValidationException::errors()
      */
     protected function validate(Request $request, array $rules): array
@@ -134,12 +134,12 @@ class Controller
                 }
             }
 
-            if (!empty($fieldErrors)) {
+            if (! empty($fieldErrors)) {
                 $errors[$field] = $fieldErrors;
             }
         }
 
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             throw new ValidationException($errors);
         }
 
@@ -149,10 +149,7 @@ class Controller
     /**
      * Apply a single validation rule.
      *
-     * @param string               $rule
-     * @param string               $field
-     * @param string               $value
-     * @param array<string, mixed> $allData
+     * @param  array<string, mixed>  $allData
      * @return string|null Error message or null if valid
      */
     private function applyRule(string $rule, string $field, string $value, array $allData): ?string
@@ -167,35 +164,35 @@ class Controller
 
         return match ($ruleName) {
             'required' => ($value === '')
-                ? 'The ' . $field . ' field is required.'
+                ? 'The '.$field.' field is required.'
                 : null,
 
-            'email' => ($value !== '' && !filter_var($value, FILTER_VALIDATE_EMAIL))
-                ? 'The ' . $field . ' field must be a valid email address.'
+            'email' => ($value !== '' && ! filter_var($value, FILTER_VALIDATE_EMAIL))
+                ? 'The '.$field.' field must be a valid email address.'
                 : null,
 
             'min' => ($value !== '' && ($isNum ? (float) $value < (float) $paramValue : strlen($value) < (int) $paramValue))
-                ? 'The ' . $field . ' field must be at least ' . $paramStr . '.'
+                ? 'The '.$field.' field must be at least '.$paramStr.'.'
                 : null,
 
             'max' => ($value !== '' && ($isNum ? (float) $value > (float) $paramValue : strlen($value) > (int) $paramValue))
-                ? 'The ' . $field . ' field must not exceed ' . $paramStr . '.'
+                ? 'The '.$field.' field must not exceed '.$paramStr.'.'
                 : null,
 
-            'in' => ($value !== '' && !in_array($value, explode(',', $paramStr), true))
-                ? 'The ' . $field . ' field must be one of: ' . $paramStr . '.'
+            'in' => ($value !== '' && ! in_array($value, explode(',', $paramStr), true))
+                ? 'The '.$field.' field must be one of: '.$paramStr.'.'
                 : null,
 
-            'numeric' => ($value !== '' && !is_numeric($value))
-                ? 'The ' . $field . ' field must be numeric.'
+            'numeric' => ($value !== '' && ! is_numeric($value))
+                ? 'The '.$field.' field must be numeric.'
                 : null,
 
-            'alpha' => ($value !== '' && !preg_match('/^[a-zA-Z]+$/', $value))
-                ? 'The ' . $field . ' field must contain only letters.'
+            'alpha' => ($value !== '' && ! preg_match('/^[a-zA-Z]+$/', $value))
+                ? 'The '.$field.' field must contain only letters.'
                 : null,
 
-            'alpha_num' => ($value !== '' && !preg_match('/^[a-zA-Z0-9]+$/', $value))
-                ? 'The ' . $field . ' field must contain only letters and numbers.'
+            'alpha_num' => ($value !== '' && ! preg_match('/^[a-zA-Z0-9]+$/', $value))
+                ? 'The '.$field.' field must contain only letters and numbers.'
                 : null,
 
             default => null,

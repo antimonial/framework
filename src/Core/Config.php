@@ -39,12 +39,11 @@ class Config
      *   // app/Config/database.php
      *   return ['host' => '127.0.0.1', 'port' => 3306];
      *
-     * @param string $file Config file name (without .php extension)
-     * @return void
+     * @param  string  $file  Config file name (without .php extension)
      */
     public static function load(string $file): void
     {
-        $path = ROOT_PATH . "/app/Config/{$file}.php";
+        $path = ROOT_PATH."/app/Config/{$file}.php";
 
         if (file_exists($path)) {
             self::$data[$file] = require $path;
@@ -59,9 +58,8 @@ class Config
      *
      * @example Config::get('database.host', 'localhost');
      *
-     * @param string      $key      Dot-notation key (e.g. 'database.host')
-     * @param mixed       $default  Default value if key is not found
-     * @return mixed
+     * @param  string  $key  Dot-notation key (e.g. 'database.host')
+     * @param  mixed  $default  Default value if key is not found
      */
     public static function get(string $key, mixed $default = null): mixed
     {
@@ -72,11 +70,11 @@ class Config
             return $default;
         }
 
-        if (!isset(self::$data[$file])) {
+        if (! isset(self::$data[$file])) {
             self::load($file);
         }
 
-        if (!isset(self::$data[$file])) {
+        if (! isset(self::$data[$file])) {
             return $default;
         }
 
@@ -90,17 +88,15 @@ class Config
     /**
      * Retrieve a nested value from an array using dot notation.
      *
-     * @param array<array-key, mixed> $array
-     * @param string                  $key    Remaining dot-notation path
-     * @param mixed                   $default
-     * @return mixed
+     * @param  array<array-key, mixed>  $array
+     * @param  string  $key  Remaining dot-notation path
      */
     private static function dotGet(array $array, string $key, mixed $default): mixed
     {
         $keys = explode('.', $key);
 
         foreach ($keys as $k) {
-            if (!array_key_exists($k, $array)) {
+            if (! array_key_exists($k, $array)) {
                 return $default;
             }
             $array = (array) $array[$k];

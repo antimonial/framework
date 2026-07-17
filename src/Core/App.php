@@ -8,6 +8,7 @@ use Antimonial\Http\Request;
 use Antimonial\Http\Response;
 use Antimonial\Middleware\MiddlewareInterface;
 use Antimonial\Routing\Router;
+use Antimonial\Session\Session;
 use Antimonial\View\View;
 use Closure;
 use JsonException;
@@ -41,7 +42,7 @@ class App
      */
     public function __construct()
     {
-        $this->router = new Router();
+        $this->router = new Router;
     }
 
     /**
@@ -55,15 +56,13 @@ class App
      *  4. Load route definitions
      *  5. Dispatch: match route -> run middleware -> execute controller
      *  6. Send the Response
-     *
-     * @return void
      */
     public function run(): void
     {
         ErrorHandler::register();
 
         $timezone = Config::get('app.timezone', 'UTC');
-        if (!is_string($timezone)) {
+        if (! is_string($timezone)) {
             $timezone = 'UTC';
         }
         date_default_timezone_set($timezone);
@@ -71,7 +70,7 @@ class App
         // Opt-in sessions: the framework does not force a session on you.
         // Enable via app/Config/app.php: ['session' => true].
         if (Config::get('app.session', false)) {
-            \Antimonial\Session\Session::start();
+            Session::start();
         }
 
         $request = Request::fromGlobals();
@@ -99,12 +98,12 @@ class App
         } catch (HttpNotFoundException $e) {
             try {
                 $html = View::renderWithLayout('errors/404', 'layouts/main', []);
-                $response = (new Response())
+                $response = (new Response)
                     ->status(404)
                     ->header('Content-Type', 'text/html; charset=UTF-8')
                     ->body((string) $html);
-            } catch (\RuntimeException) {
-                $response = (new Response())
+            } catch (RuntimeException) {
+                $response = (new Response)
                     ->status(404)
                     ->header('Content-Type', 'text/html; charset=UTF-8')
                     ->body('<h1>404 Not Found</h1>');
@@ -121,7 +120,7 @@ class App
                 }
             }
 
-            $response = (new Response())
+            $response = (new Response)
                 ->status(422)
                 ->header('Content-Type', 'application/json; charset=UTF-8')
                 ->body($body);
@@ -135,12 +134,10 @@ class App
      *
      * Expects `app/Routes/web.php` to exist. The file receives
      * the Router instance as `$router` in its scope.
-     *
-     * @return void
      */
     private function loadRoutes(): void
     {
-        $routesFile = ROOT_PATH . '/app/Routes/web.php';
+        $routesFile = ROOT_PATH.'/app/Routes/web.php';
 
         if (file_exists($routesFile)) {
             $router = $this->router;
@@ -161,9 +158,8 @@ class App
      *  - array -> converted to JSON response
      *  - string -> wrapped in an HTML response
      *
-     * @param array{0: class-string, 1: string}|callable $handler
-     * @param Request $request
-     * @return Response
+     * @param  array{0: class-string, 1: string}|callable  $handler
+     *
      * @throws RuntimeException If the handler returns an unsupported type
      */
     private function dispatchController(array|callable $handler, Request $request): Response
@@ -172,10 +168,10 @@ class App
             $result = $handler($request);
         } elseif (is_array($handler)) {
             [$class, $method] = $handler;
-            $controller = new $class();
+            $controller = new $class;
             $result = $controller->$method($request);
         } else {
-            throw new RuntimeException('Unsupported controller handler type: ' . get_debug_type($handler));
+            throw new RuntimeException('Unsupported controller handler type: '.get_debug_type($handler));
         }
 
         if ($result instanceof Response) {
@@ -183,15 +179,15 @@ class App
         }
 
         if (is_array($result)) {
-            return (new Response())->json($result);
+            return (new Response)->json($result);
         }
 
         if (is_string($result)) {
-            return (new Response())->body($result);
+            return (new Response)->body($result);
         }
 
         throw new RuntimeException(
-            'Controller must return Response, array, or string. Got ' . get_debug_type($result)
+            'Controller must return Response, array, or string. Got '.get_debug_type($result)
         );
     }
 
@@ -201,12 +197,12 @@ class App
      * Builds a closure chain (onion pattern): each middleware wraps
      * the next, and the innermost layer is the controller dispatch.
      *
-     * @param string[]  $middlewares Class names implementing MiddlewareInterface
-     * @param Request   $request
-     * @param callable  $core       The final handler (controller dispatch)
-     * @return Response
+     * @param  string[]  $middlewares  Class names implementing MiddlewareInterface
+     * @param  callable  $core  The final handler (controller dispatch)
+     *
      * @throws Throwable Any exception from middleware or controller
-     * @see \Antimonial\Middleware\MiddlewareInterface
+     *
+     * @see MiddlewareInterface
      */
     private function runMiddleware(array $middlewares, Request $request, callable $core): Response
     {
@@ -216,16 +212,17 @@ class App
             $next = $handler;
             $handler = function (Request $req) use ($middleware, $next) {
                 /** @var MiddlewareInterface $instance */
-                $instance = new $middleware();
+                $instance = new $middleware;
+
                 return $instance->handle($req, $next);
             };
         }
 
         $result = $handler($request);
 
-        if (!$result instanceof Response) {
+        if (! $result instanceof Response) {
             throw new RuntimeException(
-                'Middleware must return an instance of ' . Response::class . ', got ' . get_debug_type($result)
+                'Middleware must return an instance of '.Response::class.', got '.get_debug_type($result)
             );
         }
 

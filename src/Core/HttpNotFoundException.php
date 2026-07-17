@@ -14,7 +14,7 @@ use RuntimeException;
 class HttpNotFoundException extends RuntimeException
 {
     /**
-     * @param string $message Description of the missing resource
+     * @param  string  $message  Description of the missing resource
      */
     public function __construct(string $message = 'Not Found')
     {

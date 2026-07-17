@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Antimonial\Routing;
 
-use Closure;
-
 use Antimonial\Middleware\MiddlewareInterface;
+use Closure;
 
 /**
  * Value object representing a single route.
@@ -48,9 +47,9 @@ class Route
     public array $middleware = [];
 
     /**
-     * @param string                                      $method   HTTP method
-     * @param string                                      $path     URI path
-     * @param Closure|array{0: class-string, 1: string}  $handler  Route handler
+     * @param  string  $method  HTTP method
+     * @param  string  $path  URI path
+     * @param  Closure|array{0: class-string, 1: string}  $handler  Route handler
      */
     public function __construct(string $method, string $path, Closure|array $handler)
     {
@@ -64,13 +63,15 @@ class Route
      *
      * @example $route->middleware(Auth::class, AdminCheck::class);
      *
-     * @param class-string ...$middleware Middleware class names
+     * @param  class-string  ...$middleware  Middleware class names
      * @return $this
+     *
      * @see MiddlewareInterface
      */
     public function middleware(string ...$middleware): static
     {
         $this->middleware = array_merge($this->middleware, $middleware);
+
         return $this;
     }
 }

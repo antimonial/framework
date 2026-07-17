@@ -12,6 +12,4 @@ use RuntimeException;
  * Mirrors Laravel's Illuminate\Session\TokenMismatchException: a simple,
  * typed exception the framework (or app) can catch and turn into a 419.
  */
-final class TokenMismatchException extends RuntimeException
-{
-}
+final class TokenMismatchException extends RuntimeException {}

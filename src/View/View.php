@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Antimonial\View;
 
+use Antimonial\Controller\Controller;
 use RuntimeException;
 
 /**
@@ -18,7 +19,7 @@ use RuntimeException;
  * the extends/section layouts, and include) — see ViewEngine, Compiler
  * and Filters.
  *
- * @see \Antimonial\Controller\Controller::view()
+ * @see Controller::view()
  * @see Helpers::view()
  * @see ViewEngine
  */
@@ -37,8 +38,7 @@ class View
     /**
      * Set the base directory for view files and build the engine.
      *
-     * @param string $path Absolute path to the Views directory
-     * @return void
+     * @param  string  $path  Absolute path to the Views directory
      */
     public static function setViewPath(string $path): void
     {
@@ -50,14 +50,13 @@ class View
      * Get the base directory for view files.
      *
      * Defaults to ROOT_PATH/app/Views if not explicitly set.
-     *
-     * @return string
      */
     private static function getViewPath(): string
     {
         if (self::$viewPath === '') {
-            self::$viewPath = ROOT_PATH . '/app/Views';
+            self::$viewPath = ROOT_PATH.'/app/Views';
         }
+
         return self::$viewPath;
     }
 
@@ -66,11 +65,13 @@ class View
      *
      * @example View::render('users/index', ['users' => $users]);
      *
-     * @param string $path View path relative to the Views directory (e.g. 'users/index')
-     * @param array<string, mixed> $data Variables to make available in the view
-     * @param array<string, mixed>|null &$capturedVars If set, receives any extra variables defined by the view
+     * @param  string  $path  View path relative to the Views directory (e.g. 'users/index')
+     * @param  array<string, mixed>  $data  Variables to make available in the view
+     * @param  array<string, mixed>|null  &$capturedVars  If set, receives any extra variables defined by the view
      * @return string Rendered HTML
+     *
      * @throws RuntimeException If the view file does not exist
+     *
      * @see renderWithLayout()
      */
     public static function render(string $path, array $data = [], ?array $capturedVars = null): string
@@ -95,11 +96,12 @@ class View
      *
      * @example View::renderWithLayout('users/index', 'layouts/main', ['users' => $users]);
      *
-     * @param string $path View path
-     * @param string|null $layout Layout path (null = no layout)
-     * @param array<string, mixed> $data Variables for the view
-     * @return string
+     * @param  string  $path  View path
+     * @param  string|null  $layout  Layout path (null = no layout)
+     * @param  array<string, mixed>  $data  Variables for the view
+     *
      * @throws RuntimeException If the view file does not exist
+     *
      * @see render()
      */
     public static function renderWithLayout(string $path, ?string $layout, array $data = []): string

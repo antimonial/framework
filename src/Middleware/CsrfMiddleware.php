@@ -20,7 +20,7 @@ use Antimonial\Session\Session;
  * Register it globally or on a route group — the Router already supports
  * both. It is opt-in: the framework does not force CSRF on you.
  *
- * @see \Antimonial\Security\Csrf
+ * @see Csrf
  */
 final class CsrfMiddleware implements MiddlewareInterface
 {
@@ -31,6 +31,7 @@ final class CsrfMiddleware implements MiddlewareInterface
         if (in_array(strtoupper($request->method()), self::SAFE_METHODS, true)) {
             /** @var Response $response */
             $response = $next($request);
+
             return $response;
         }
 
@@ -41,7 +42,7 @@ final class CsrfMiddleware implements MiddlewareInterface
             $token = $request->post('_token') ?? $request->header('X-CSRF-TOKEN');
             Csrf::verify($token);
         } catch (TokenMismatchException) {
-            return (new Response())
+            return (new Response)
                 ->status(419)
                 ->header('Content-Type', 'text/plain; charset=UTF-8')
                 ->body('419 Page Expired');
@@ -49,6 +50,7 @@ final class CsrfMiddleware implements MiddlewareInterface
 
         /** @var Response $nextResponse */
         $nextResponse = $next($request);
+
         return $nextResponse;
     }
 }

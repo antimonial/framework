@@ -21,7 +21,7 @@ namespace Antimonial\Database;
 class Raw
 {
     /**
-     * @param string $expression Raw SQL expression
+     * @param  string  $expression  Raw SQL expression
      */
     public function __construct(
         public readonly string $expression,
@@ -29,8 +29,6 @@ class Raw
 
     /**
      * Return the raw expression as a string.
-     *
-     * @return string
      */
     public function __toString(): string
     {

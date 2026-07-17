@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Antimonial\Routing;
 
-use Closure;
-
+use Antimonial\Core\App;
 use Antimonial\Core\ErrorHandler;
 use Antimonial\Core\HttpNotFoundException;
 use Antimonial\Http\Request;
+use Antimonial\Middleware\MiddlewareInterface;
+use Closure;
 
 /**
  * HTTP router.
@@ -27,7 +28,7 @@ use Antimonial\Http\Request;
  *   $router->post('/users', [UserController::class, 'store']);
  *
  * @see Route
- * @see \Antimonial\Core\App
+ * @see App
  */
 class Router
 {
@@ -73,9 +74,7 @@ class Router
      *
      * @example $router->get('/users/{id}', [UserController::class, 'show']);
      *
-     * @param string                                      $path
-     * @param Closure|array{0: class-string, 1: string}  $handler
-     * @return Route
+     * @param  Closure|array{0: class-string, 1: string}  $handler
      */
     public function get(string $path, Closure|array $handler): Route
     {
@@ -87,9 +86,7 @@ class Router
      *
      * @example $router->post('/users', [UserController::class, 'store']);
      *
-     * @param string                                      $path
-     * @param Closure|array{0: class-string, 1: string}  $handler
-     * @return Route
+     * @param  Closure|array{0: class-string, 1: string}  $handler
      */
     public function post(string $path, Closure|array $handler): Route
     {
@@ -101,9 +98,7 @@ class Router
      *
      * @example $router->put('/users/{id}', [UserController::class, 'update']);
      *
-     * @param string                                      $path
-     * @param Closure|array{0: class-string, 1: string}  $handler
-     * @return Route
+     * @param  Closure|array{0: class-string, 1: string}  $handler
      */
     public function put(string $path, Closure|array $handler): Route
     {
@@ -115,9 +110,7 @@ class Router
      *
      * @example $router->delete('/users/{id}', [UserController::class, 'destroy']);
      *
-     * @param string                                      $path
-     * @param Closure|array{0: class-string, 1: string}  $handler
-     * @return Route
+     * @param  Closure|array{0: class-string, 1: string}  $handler
      */
     public function delete(string $path, Closure|array $handler): Route
     {
@@ -127,9 +120,8 @@ class Router
     /**
      * Register a route for multiple HTTP methods.
      *
-     * @param string[]                                    $methods
-     * @param string                                      $path
-     * @param Closure|array{0: class-string, 1: string}  $handler
+     * @param  string[]  $methods
+     * @param  Closure|array{0: class-string, 1: string}  $handler
      * @return Route[]
      */
     public function match(array $methods, string $path, Closure|array $handler): array
@@ -138,6 +130,7 @@ class Router
         foreach ($methods as $method) {
             $routes[] = $this->addRoute(strtoupper($method), $path, $handler);
         }
+
         return $routes;
     }
 
@@ -148,19 +141,17 @@ class Router
      *   $router->group('/api', function (Router $r) {
      *       $r->get('/users', [UserController::class, 'index']);
      *   });
-     *
      * @example
      *   $router->group('/admin', function (Router $r) {
      *       $r->get('/dashboard', [AdminController::class, 'dashboard']);
      *   }, [AdminMiddleware::class]);
      *
-     * @param string   $prefix     URI prefix (e.g. '/api')
-     * @param callable $callback   Receives this Router instance
-     * @param string[] $middleware Middleware class names applied to all routes in the group
-     * @return void
+     * @param  string  $prefix  URI prefix (e.g. '/api')
+     * @param  callable  $callback  Receives this Router instance
+     * @param  string[]  $middleware  Middleware class names applied to all routes in the group
      */
     /**
-     * @param array<int, class-string> $middleware
+     * @param  array<int, class-string>  $middleware
      */
     public function group(string $prefix, callable $callback, array $middleware = []): void
     {
@@ -175,9 +166,9 @@ class Router
     /**
      * Add middleware applied to ALL routes.
      *
-     * @param class-string $middleware
-     * @return void
-     * @see \Antimonial\Middleware\MiddlewareInterface
+     * @param  class-string  $middleware
+     *
+     * @see MiddlewareInterface
      */
     public function addMiddleware(string $middleware): void
     {
@@ -191,8 +182,8 @@ class Router
      *
      * Returns the handler, middleware, and extracted parameters.
      *
-     * @param Request $request
      * @return array{handler: Closure|array{0: class-string, 1: string}, middleware: class-string[], params: array<string, string>}
+     *
      * @throws HttpNotFoundException If no route matches
      */
     public function dispatch(Request $request): array
@@ -203,10 +194,11 @@ class Router
         // Try exact match first (O(1) hash lookup)
         if (isset($this->routes[$method][$uri])) {
             $route = $this->routes[$method][$uri];
+
             return [
-                'handler'    => $route->handler,
+                'handler' => $route->handler,
                 'middleware' => array_merge($this->globalMiddleware, $route->middleware),
-                'params'     => [],
+                'params' => [],
             ];
         }
 
@@ -216,9 +208,9 @@ class Router
                 $params = $this->matchParameters($route->path, $uri);
                 if ($params !== false) {
                     return [
-                        'handler'    => $route->handler,
+                        'handler' => $route->handler,
                         'middleware' => array_merge($this->globalMiddleware, $route->middleware),
-                        'params'     => $params,
+                        'params' => $params,
                     ];
                 }
             }
@@ -232,9 +224,7 @@ class Router
     /**
      * Create and store a route.
      *
-     * @param string $method
-     * @param string $path
-     * @param Closure|array{0: class-string, 1: string} $handler
+     * @param  Closure|array{0: class-string, 1: string}  $handler
      * @return Route The registered Route instance
      */
     private function addRoute(string $method, string $path, Closure|array $handler): Route
@@ -263,9 +253,6 @@ class Router
 
     /**
      * Prepend the current group prefix to a path.
-     *
-     * @param string $path
-     * @return string
      */
     private function applyGroupPrefix(string $path): string
     {
@@ -273,9 +260,10 @@ class Router
             return $path;
         }
 
-        $prefixes = array_map(fn($g) => $g['prefix'], $this->groupStack);
+        $prefixes = array_map(fn ($g) => $g['prefix'], $this->groupStack);
         $prefix = implode('', $prefixes);
-        return '/' . trim($prefix, '/') . '/' . ltrim($path, '/');
+
+        return '/'.trim($prefix, '/').'/'.ltrim($path, '/');
     }
 
     /**
@@ -285,8 +273,8 @@ class Router
      * tests against the URI. Returns extracted parameters on
      * match, or false on failure.
      *
-     * @param string $pattern Route pattern (e.g. '/users/{id}')
-     * @param string $uri     Actual request URI (e.g. '/users/42')
+     * @param  string  $pattern  Route pattern (e.g. '/users/{id}')
+     * @param  string  $uri  Actual request URI (e.g. '/users/42')
      * @return array<string, string>|false
      */
     private function matchParameters(string $pattern, string $uri): array|false
@@ -294,9 +282,10 @@ class Router
         // Convert {param} or {param:regex} to named regex groups
         $regex = preg_replace_callback('#\{(\w+)(?::([^}]+))?\}#', function ($m) {
             $pattern = $m[2] ?? '[^/]+';
-            return '(?P<' . $m[1] . '>' . $pattern . ')';
+
+            return '(?P<'.$m[1].'>'.$pattern.')';
         }, $pattern);
-        $regex = '#^' . $regex . '$#';
+        $regex = '#^'.$regex.'$#';
 
         if (preg_match($regex, $uri, $matches)) {
             // Extract only named groups (skip numeric indices)
@@ -306,6 +295,7 @@ class Router
                     $params[$key] = $value;
                 }
             }
+
             return $params;
         }
 

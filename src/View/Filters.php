@@ -19,22 +19,18 @@ final class Filters
      */
     private static array $map = [
         'escape' => [self::class, 'escape'],
-        'e'      => [self::class, 'escape'],
-        'raw'    => [self::class, 'raw'],
-        'upper'  => 'strtoupper',
-        'lower'  => 'strtolower',
-        'trim'   => 'trim',
+        'e' => [self::class, 'escape'],
+        'raw' => [self::class, 'raw'],
+        'upper' => 'strtoupper',
+        'lower' => 'strtolower',
+        'trim' => 'trim',
         'length' => [self::class, 'length'],
-        'json'   => [self::class, 'toJson'],
-        'date'   => [self::class, 'date'],
+        'json' => [self::class, 'toJson'],
+        'date' => [self::class, 'date'],
     ];
 
     /**
      * Register a filter callable.
-     *
-     * @param string   $name
-     * @param callable $fn
-     * @return void
      */
     public static function add(string $name, callable $fn): void
     {
@@ -44,22 +40,25 @@ final class Filters
     /**
      * Apply a filter chain ("a|b:c") to a value.
      *
-     * @param mixed  $value
-     * @param string $chain Pipe-separated filter names, optionally ":arg"
-     * @return mixed
+     * @param  string  $chain  Pipe-separated filter names, optionally ":arg"
      */
     public static function apply(mixed $value, string $chain): mixed
     {
-        foreach (explode('|', $chain) as $part) {
+        /** @var list<string> $parts */
+        $parts = explode('|', $chain);
+        foreach ($parts as $part) {
             $part = trim($part);
             if ($part === '') {
                 continue;
             }
 
             [$name, $arg] = array_pad(explode(':', $part, 2), 2, null);
+            if (! is_string($name)) {
+                $name = (string) $name;
+            }
             $name = strtolower(trim($name));
 
-            if (!isset(self::$map[$name])) {
+            if (! isset(self::$map[$name])) {
                 continue;
             }
 
@@ -75,13 +74,16 @@ final class Filters
 
     public static function escape(mixed $value): string
     {
-        $str = (string) $value;
+        /** @phpstan-ignore-next-line cast.string (intentional: escape any value to string) */
+        $str = is_string($value) ? $value : (string) $value;
+
         return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
     }
 
     public static function raw(mixed $value): string
     {
-        return (string) $value;
+        /** @phpstan-ignore-next-line cast.string (intentional: coalesce any value to string) */
+        return is_string($value) ? $value : (string) $value;
     }
 
     public static function length(mixed $value): int
@@ -92,6 +94,7 @@ final class Filters
         if (is_countable($value)) {
             return count($value);
         }
+
         return 0;
     }
 
@@ -110,8 +113,10 @@ final class Filters
         }
         if (is_string($value)) {
             $ts = strtotime($value);
+
             return $ts === false ? '' : date($format, $ts);
         }
+
         return '';
     }
 }

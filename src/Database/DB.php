@@ -27,8 +27,6 @@ class DB
 {
     /**
      * Shared connection instance.
-     *
-     * @var Connection|null
      */
     private static ?Connection $connection = null;
 
@@ -37,9 +35,10 @@ class DB
      *
      * Reads config from 'database.connections.{default}' on first call.
      *
-     * @param array<string, mixed>|null $config Optional config override
-     * @return Connection
+     * @param  array<string, mixed>|null  $config  Optional config override
+     *
      * @throws PDOException If the connection fails
+     *
      * @see Connection::__construct()
      */
     public static function connection(?array $config = null): Connection
@@ -49,21 +48,22 @@ class DB
         }
 
         if ($config === null) {
-            $default = (string) Config::get('database.default', 'mysql');
+            /** @var mixed $defaultRaw */
+            $defaultRaw = Config::get('database.default', 'mysql');
+            $default = is_string($defaultRaw) ? $defaultRaw : 'mysql';
             $dbConfig = Config::get("database.connections.{$default}", []);
             $config = is_array($dbConfig) ? $dbConfig : [];
         }
 
         /** @var array<string, mixed> $config */
         self::$connection = new Connection($config);
+
         return self::$connection;
     }
 
     /**
      * Create a QueryBuilder for the given table.
      *
-     * @param string $table
-     * @return QueryBuilder
      * @see QueryBuilder
      */
     public static function table(string $table): QueryBuilder
@@ -74,13 +74,10 @@ class DB
     /**
      * Execute a raw SELECT query.
      *
-     * @param string $sql
-     * @param array<string, mixed> $bindings
-     * @return object[]
-     * @throws PDOException If the query fails
-     */
-    /**
+     * @param  array<int, mixed>  $bindings
      * @return array<object>
+     *
+     * @throws PDOException If the query fails
      */
     public static function select(string $sql, array $bindings = []): array
     {
@@ -90,7 +87,6 @@ class DB
     /**
      * Get the underlying Connection instance.
      *
-     * @return Connection
      * @see Connection
      */
     public static function getConnection(): Connection
@@ -101,7 +97,6 @@ class DB
     /**
      * Begin a database transaction.
      *
-     * @return void
      * @throws PDOException If the transaction cannot be started
      */
     public static function beginTransaction(): void
@@ -112,7 +107,6 @@ class DB
     /**
      * Commit the active transaction.
      *
-     * @return void
      * @throws PDOException If the commit fails
      */
     public static function commit(): void
@@ -123,7 +117,6 @@ class DB
     /**
      * Roll back the active transaction.
      *
-     * @return void
      * @throws PDOException If the rollback fails
      */
     public static function rollBack(): void
@@ -134,8 +127,6 @@ class DB
     /**
      * Create a Raw SQL expression.
      *
-     * @param string $expression
-     * @return Raw
      * @see Raw
      * @see QueryBuilder::where()
      */

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Antimonial\View;
 
 use RuntimeException;
-use \Antimonial\View\Compiler;
 
 /**
  * Built-in template engine for Antimonial.
@@ -34,21 +33,21 @@ class ViewEngine
     private string $cachePath;
 
     /**
-     * @param string $viewPath  Absolute path to the Views directory
-     * @param string $cachePath Absolute path for compiled PHP (default: viewPath/../storage/views)
+     * @param  string  $viewPath  Absolute path to the Views directory
+     * @param  string  $cachePath  Absolute path for compiled PHP (default: viewPath/../storage/views)
      */
     public function __construct(string $viewPath, ?string $cachePath = null)
     {
         $this->viewPath = rtrim($viewPath, '/');
-        $this->cachePath = $cachePath ?? dirname($this->viewPath) . '/storage/views';
+        $this->cachePath = $cachePath ?? dirname($this->viewPath).'/storage/views';
     }
 
     /**
      * Render a template to a string.
      *
-     * @param string $path Template path relative to viewPath (e.g. 'users/index')
-     * @param array<string, mixed> $data Variables available in the template
-     * @return string
+     * @param  string  $path  Template path relative to viewPath (e.g. 'users/index')
+     * @param  array<string, mixed>  $data  Variables available in the template
+     *
      * @throws RuntimeException If the template is missing
      */
     public function render(string $path, array $data = []): string
@@ -57,7 +56,7 @@ class ViewEngine
 
         $compiled = $this->compiledPath($source);
         if ($this->isExpired($source, $compiled)) {
-            (new Compiler())->compile($source, $compiled);
+            (new Compiler)->compile($source, $compiled);
         }
 
         return $this->evaluate($compiled, $data);
@@ -66,15 +65,11 @@ class ViewEngine
     /**
      * Whether the most recent evaluate() was for a child template that
      * extends a layout (its output is the rendered layout, not free HTML).
-     *
-     * @var bool
      */
     private bool $extendingChild = false;
 
     /**
      * Layout path set via @extends, pending render at the end of evaluate().
-     *
-     * @var string|null
      */
     private ?string $extendLayout = null;
 
@@ -87,7 +82,7 @@ class ViewEngine
      * Called from the footer of a compiled child template, after the child
      * body has been evaluated (so free content and sections are captured).
      *
-     * @param string $layout Layout path relative to viewPath
+     * @param  string  $layout  Layout path relative to viewPath
      * @return string
      */
     /**
@@ -97,8 +92,7 @@ class ViewEngine
      * this flag once the child body (free content + @section blocks) has
      * been captured, and renders the layout with that content.
      *
-     * @param string $layout Layout path relative to viewPath
-     * @return void
+     * @param  string  $layout  Layout path relative to viewPath
      */
     public function beginExtend(string $layout): void
     {
@@ -108,9 +102,6 @@ class ViewEngine
 
     /**
      * Start capturing a section.
-     *
-     * @param string $name
-     * @return void
      */
     public function section(string $name): void
     {
@@ -120,8 +111,6 @@ class ViewEngine
 
     /**
      * End the active section and store its content.
-     *
-     * @return void
      */
     public function endSection(): void
     {
@@ -134,10 +123,6 @@ class ViewEngine
 
     /**
      * Output a section's content (with optional default).
-     *
-     * @param string $name
-     * @param string $default
-     * @return string
      */
     public function yield(string $name, string $default = ''): string
     {
@@ -146,8 +131,6 @@ class ViewEngine
 
     /**
      * Placeholder for @parent (renders the parent layout's slot content).
-     *
-     * @return string
      */
     public function parent(): string
     {
@@ -159,15 +142,14 @@ class ViewEngine
      *
      * If no data is given, the parent template's variables are inherited.
      *
-     * @param string $path
-     * @param array<string, mixed> $data
-     * @return string
+     * @param  array<string, mixed>  $data
      */
     public function include(string $path, array $data = []): string
     {
         if (empty($data)) {
             $data = $this->parentData;
         }
+
         return $this->render($path, $data);
     }
 
@@ -191,8 +173,6 @@ class ViewEngine
     /**
      * Resolve a template path to an absolute, safe file path.
      *
-     * @param string $path
-     * @return string
      * @throws RuntimeException
      */
     private function resolve(string $path): string
@@ -202,10 +182,10 @@ class ViewEngine
             throw new RuntimeException("View directory not found: {$this->viewPath}");
         }
 
-        $file = realpath($base . '/' . ltrim($path, '/') . '.php');
+        $file = realpath($base.'/'.ltrim($path, '/').'.php');
         if ($file === false
-            || strncmp($file, $base . DIRECTORY_SEPARATOR, strlen($base) + 1) !== 0
-            || !is_file($file)
+            || strncmp($file, $base.DIRECTORY_SEPARATOR, strlen($base) + 1) !== 0
+            || ! is_file($file)
         ) {
             throw new RuntimeException("View not found: {$path}");
         }
@@ -215,36 +195,28 @@ class ViewEngine
 
     /**
      * Compute the compiled cache file path (hash of source path).
-     *
-     * @param string $source
-     * @return string
      */
     private function compiledPath(string $source): string
     {
-        return $this->cachePath . '/' . hash('xxh128', $source) . '.php';
+        return $this->cachePath.'/'.hash('xxh128', $source).'.php';
     }
 
     /**
      * True if the compiled file is missing or older than the source.
-     *
-     * @param string $source
-     * @param string $compiled
-     * @return bool
      */
     private function isExpired(string $source, string $compiled): bool
     {
-        if (!is_file($compiled)) {
+        if (! is_file($compiled)) {
             return true;
         }
+
         return filemtime($source) > filemtime($compiled);
     }
 
     /**
      * Evaluate compiled PHP with extracted data.
      *
-     * @param string $compiled
-     * @param array<string, mixed> $data
-     * @return string
+     * @param  array<string, mixed>  $data
      */
     private function evaluate(string $compiled, array $data): string
     {

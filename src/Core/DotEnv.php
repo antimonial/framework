@@ -24,7 +24,7 @@ final class DotEnv
      */
     public static function load(string $path): void
     {
-        if (!is_file($path)) {
+        if (! is_file($path)) {
             return;
         }
 
@@ -44,7 +44,7 @@ final class DotEnv
                 $line = substr($line, 7);
             }
 
-            if (!str_contains($line, '=')) {
+            if (! str_contains($line, '=')) {
                 continue;
             }
 

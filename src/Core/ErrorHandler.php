@@ -26,9 +26,6 @@ class ErrorHandler
 
     /**
      * Enable debug mode for detailed error reporting.
-     *
-     * @param bool $debug
-     * @return void
      */
     public static function enableDebug(bool $debug = true): void
     {
@@ -37,8 +34,6 @@ class ErrorHandler
 
     /**
      * Whether debug mode is currently enabled.
-     *
-     * @return bool
      */
     public static function isDebug(): bool
     {
@@ -48,7 +43,6 @@ class ErrorHandler
     /**
      * Register error, exception, and shutdown handlers.
      *
-     * @return void
      * @see App::run()
      */
     public static function register(): void
@@ -56,6 +50,7 @@ class ErrorHandler
         set_error_handler(
             function (int $errno, string $errstr, string $errfile = '', int $errline = 0): bool {
                 self::handleError($errno, $errstr, $errfile, $errline);
+
                 return true;
             }
         );
@@ -68,16 +63,16 @@ class ErrorHandler
      *
      * Converts PHP errors into ErrorException instances.
      *
-     * @param int    $level   Error level
-     * @param string $message Error message
-     * @param string $file    Source file
-     * @param int    $line    Line number
-     * @return void
+     * @param  int  $level  Error level
+     * @param  string  $message  Error message
+     * @param  string  $file  Source file
+     * @param  int  $line  Line number
+     *
      * @throws ErrorException Always
      */
     public static function handleError(int $level, string $message, string $file, int $line): void
     {
-        if (!(error_reporting() & $level)) {
+        if (! (error_reporting() & $level)) {
             return;
         }
         throw new ErrorException($message, 0, $level, $file, $line);
@@ -87,9 +82,6 @@ class ErrorHandler
      * Handle uncaught exceptions.
      *
      * Logs the error and renders a 500 response.
-     *
-     * @param Throwable $exception
-     * @return void
      */
     public static function handleException(Throwable $exception): void
     {
@@ -101,8 +93,6 @@ class ErrorHandler
      * Handle fatal errors via the shutdown function.
      *
      * Checks for a fatal error in the last error and renders it.
-     *
-     * @return void
      */
     public static function handleShutdown(): void
     {
@@ -116,9 +106,6 @@ class ErrorHandler
 
     /**
      * Log the exception to the error log.
-     *
-     * @param Throwable $exception
-     * @return void
      */
     private static function log(Throwable $exception): void
     {
@@ -134,13 +121,10 @@ class ErrorHandler
 
     /**
      * Render an error response (HTML in debug mode, minimal otherwise).
-     *
-     * @param Throwable $exception
-     * @return void
      */
     private static function render(Throwable $exception): void
     {
-        if (!headers_sent()) {
+        if (! headers_sent()) {
             http_response_code(500);
             header('Content-Type: text/html; charset=UTF-8');
             header('X-Content-Type-Options: nosniff');
@@ -157,9 +141,6 @@ class ErrorHandler
 
     /**
      * Render a detailed debug error page with stack trace.
-     *
-     * @param Throwable $exception
-     * @return void
      */
     private static function renderDebugPage(Throwable $exception): void
     {

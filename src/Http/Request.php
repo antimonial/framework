@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Antimonial\Http;
 
+use Antimonial\Routing\Router;
+
 /**
  * HTTP request wrapper.
  *
@@ -18,7 +20,7 @@ namespace Antimonial\Http;
  * @example $request = Request::fromGlobals();
  *
  * @see Response
- * @see \Antimonial\Routing\Router::dispatch()
+ * @see Router::dispatch()
  */
 class Request
 {
@@ -74,11 +76,11 @@ class Request
     /**
      * Private constructor — use fromGlobals() factory.
      *
-     * @param array<string, mixed> $get
-     * @param array<string, mixed> $post
-     * @param array<string, mixed> $server
-     * @param array<string, mixed> $cookies
-     * @param array<string, array{name: string, type: string, tmp_name: string, error: int, size: int}> $files
+     * @param  array<string, mixed>  $get
+     * @param  array<string, mixed>  $post
+     * @param  array<string, mixed>  $server
+     * @param  array<string, mixed>  $cookies
+     * @param  array<string, array{name: string, type: string, tmp_name: string, error: int, size: int}>  $files
      */
     private function __construct(
         array $get,
@@ -98,8 +100,6 @@ class Request
 
     /**
      * Create a Request from PHP superglobals.
-     *
-     * @return static
      */
     public static function fromGlobals(): static
     {
@@ -173,8 +173,6 @@ class Request
 
     /**
      * Check if the request method is GET.
-     *
-     * @return bool
      */
     public function isGet(): bool
     {
@@ -183,8 +181,6 @@ class Request
 
     /**
      * Check if the request method is POST.
-     *
-     * @return bool
      */
     public function isPost(): bool
     {
@@ -193,8 +189,6 @@ class Request
 
     /**
      * Check if the request method is PUT.
-     *
-     * @return bool
      */
     public function isPut(): bool
     {
@@ -203,8 +197,6 @@ class Request
 
     /**
      * Check if the request method is DELETE.
-     *
-     * @return bool
      */
     public function isDelete(): bool
     {
@@ -215,10 +207,6 @@ class Request
      * Get a value from $_POST or $_GET (POST first, then GET fallback).
      *
      * @example $name = $request->input('name');
-     *
-     * @param string $key
-     * @param mixed  $default
-     * @return mixed
      */
     public function input(string $key, mixed $default = null): mixed
     {
@@ -237,9 +225,6 @@ class Request
 
     /**
      * Check if an input key exists.
-     *
-     * @param string $key
-     * @return bool
      */
     public function has(string $key): bool
     {
@@ -250,10 +235,6 @@ class Request
      * Get a value from $_GET.
      *
      * @example $page = $request->query('page', 1);
-     *
-     * @param string $key
-     * @param mixed  $default
-     * @return mixed
      */
     public function query(string $key, mixed $default = null): mixed
     {
@@ -262,10 +243,6 @@ class Request
 
     /**
      * Get a value from $_POST.
-     *
-     * @param string $key
-     * @param mixed  $default
-     * @return mixed
      */
     public function post(string $key, mixed $default = null): mixed
     {
@@ -275,20 +252,15 @@ class Request
     /**
      * Get an uploaded file.
      *
-     * @param string $key
      * @return array{name: string, type: string, tmp_name: string, error: int, size: int}|null
      */
-    public function file(string $key): array|null
+    public function file(string $key): ?array
     {
         return $this->files[$key] ?? null;
     }
 
     /**
      * Get a cookie value.
-     *
-     * @param string $key
-     * @param mixed  $default
-     * @return mixed
      */
     public function cookie(string $key, mixed $default = null): mixed
     {
@@ -302,9 +274,7 @@ class Request
      *
      * @example $auth = $request->header('Authorization');
      *
-     * @param string $name    Header name (e.g. 'Authorization')
-     * @param mixed  $default
-     * @return mixed
+     * @param  string  $name  Header name (e.g. 'Authorization')
      */
     public function header(string $name, mixed $default = null): mixed
     {
@@ -314,7 +284,7 @@ class Request
         // without the HTTP_ prefix. See https://www.php.net/manual/en/reserved.variables.server.php
         $special = ['CONTENT_TYPE', 'CONTENT_LENGTH', 'CONTENT_MD5'];
 
-        $key = in_array($normalized, $special, true) ? $normalized : 'HTTP_' . $normalized;
+        $key = in_array($normalized, $special, true) ? $normalized : 'HTTP_'.$normalized;
 
         return $this->server[$key] ?? $default;
     }
@@ -345,10 +315,6 @@ class Request
      * Set an attribute on the request.
      *
      * Used by middleware and the router to pass data to controllers.
-     *
-     * @param string $key
-     * @param mixed  $value
-     * @return void
      */
     public function set(string $key, mixed $value): void
     {
@@ -357,10 +323,6 @@ class Request
 
     /**
      * Get a request attribute.
-     *
-     * @param string $key
-     * @param mixed  $default
-     * @return mixed
      */
     public function get(string $key, mixed $default = null): mixed
     {
@@ -372,9 +334,6 @@ class Request
      *
      * @example $id = $request->route('id');
      *
-     * @param string $key
-     * @param mixed  $default
-     * @return mixed
      * @see get()
      */
     public function route(string $key, mixed $default = null): mixed
@@ -387,8 +346,6 @@ class Request
      *
      * Supports the X-HTTP-Method-Override header and the _method
      * POST field for clients that don't support PUT/DELETE.
-     *
-     * @return string
      */
     private function detectMethod(): string
     {
@@ -415,8 +372,6 @@ class Request
      * Detect the request URI path.
      *
      * Strips the query string and normalizes the path.
-     *
-     * @return string
      */
     private function detectUri(): string
     {
@@ -437,6 +392,6 @@ class Request
             $uri = substr($uri, strlen($base));
         }
 
-        return '/' . ltrim($uri, '/');
+        return '/'.ltrim($uri, '/');
     }
 }

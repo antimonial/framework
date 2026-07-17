@@ -31,67 +31,84 @@ class Connection
 {
     /**
      * The PDO instance (null until connected).
-     *
-     * @var PDO|null
      */
     private ?PDO $pdo = null;
 
     /**
      * Connection configuration.
      *
-     * @var array<string, mixed>
+     * @var array<array-key, mixed>
      */
     private array $config;
 
     /**
-     * @param array<string, mixed> $config Connection parameters
+     * @param  array<string, mixed>  $config  Connection parameters
      */
     public function __construct(array $config)
     {
+        $driver = is_string($config['driver'] ?? null) ? (string) $config['driver'] : 'mysql';
+        $username = is_string($config['username'] ?? null) ? (string) $config['username'] : 'root';
+        $password = is_string($config['password'] ?? null) ? (string) $config['password'] : '';
+        $host = is_string($config['host'] ?? null) ? (string) $config['host'] : '127.0.0.1';
+        $database = is_string($config['database'] ?? null) ? (string) $config['database'] : '';
+        $charset = is_string($config['charset'] ?? null) ? (string) $config['charset'] : 'utf8mb4';
+        $port = is_numeric($config['port'] ?? null) ? (int) $config['port'] : 3306;
+
         $this->config = [
-            'driver'   => $config['driver'] ?? 'mysql',
-            'host'     => $config['host'] ?? '127.0.0.1',
-            'port'     => (int) ($config['port'] ?? 3306),
-            'database' => (string) ($config['database'] ?? ''),
-            'username' => (string) ($config['username'] ?? 'root'),
-            'password' => (string) ($config['password'] ?? ''),
-            'charset'  => (string) ($config['charset'] ?? 'utf8mb4'),
+            'driver' => $driver,
+            'host' => $host,
+            'port' => $port,
+            'database' => $database,
+            'username' => $username,
+            'password' => $password,
+            'charset' => $charset,
         ];
     }
 
     /**
      * Establish the PDO connection.
      *
-     * @return void
      * @throws PDOException If the connection fails
      */
     private function connect(): void
     {
-        $driver = is_string($this->config['driver'] ?? null) ? $this->config['driver'] : 'mysql';
+        /** @var string $driver */
+        $driver = is_string($this->config['driver'] ?? null) ? (string) $this->config['driver'] : 'mysql';
+        /** @var string $host */
+        $host = is_string($this->config['host'] ?? null) ? (string) $this->config['host'] : '127.0.0.1';
+        /** @var int $port */
+        $port = is_numeric($this->config['port'] ?? null) ? (int) $this->config['port'] : 3306;
+        /** @var string $database */
+        $database = is_string($this->config['database'] ?? null) ? (string) $this->config['database'] : '';
+        /** @var string $username */
+        $username = is_string($this->config['username'] ?? null) ? (string) $this->config['username'] : 'root';
+        /** @var string $password */
+        $password = is_string($this->config['password'] ?? null) ? (string) $this->config['password'] : '';
+        /** @var string $charset */
+        $charset = is_string($this->config['charset'] ?? null) ? (string) $this->config['charset'] : 'utf8mb4';
 
         $dsn = match ($driver) {
-            'sqlite' => 'sqlite:' . ((string) ($this->config['database'] ?? '') !== '' ? (string) $this->config['database'] : ':memory:'),
-            default  => sprintf(
+            'sqlite' => 'sqlite:'.($database !== '' ? $database : ':memory:'),
+            default => sprintf(
                 '%s:host=%s;port=%d;dbname=%s;charset=%s',
                 $driver,
-                (string) ($this->config['host'] ?? '127.0.0.1'),
-                (int) ($this->config['port'] ?? 3306),
-                (string) ($this->config['database'] ?? ''),
-                (string) ($this->config['charset'] ?? 'utf8mb4'),
+                $host,
+                $port,
+                $database,
+                $charset,
             ),
         };
 
-        $this->pdo = new PDO($dsn, $this->config['username'], $this->config['password'], [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        $this->pdo = new PDO($dsn, $username, $password, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
-            PDO::ATTR_EMULATE_PREPARES   => false,
+            PDO::ATTR_EMULATE_PREPARES => false,
         ]);
     }
 
     /**
      * Get the PDO instance, connecting if necessary.
      *
-     * @return PDO
      * @throws PDOException If the connection fails
      */
     public function getPdo(): PDO
@@ -101,6 +118,7 @@ class Connection
         }
         /** @var PDO $pdo */
         $pdo = $this->pdo;
+
         return $pdo;
     }
 
@@ -109,58 +127,67 @@ class Connection
     /**
      * Execute a SELECT query and return all rows.
      *
-     * @param string $sql      SQL query with ? placeholders
-     * @param array  $bindings Parameter values
+     * @param  string  $sql  SQL query with ? placeholders
+     * @param  array  $bindings  Parameter values
      * @return object[] Array of stdClass objects
+     *
      * @throws PDOException If the query fails
      */
     /**
-     * @param array<int, mixed> $bindings
+     * @param  array<int, mixed>  $bindings
+     * @return array<object>
      */
     public function select(string $sql, array $bindings = []): array
     {
         $stmt = $this->execute($sql, $bindings);
-        return $stmt->fetchAll() ?: [];
+
+        /** @var array<object> $rows */
+        $rows = $stmt->fetchAll() ?: [];
+
+        return $rows;
     }
 
     /**
      * Execute an INSERT query.
      *
-     * @param string $sql      SQL query with ? placeholders
-     * @param array  $bindings Parameter values
+     * @param  string  $sql  SQL query with ? placeholders
+     * @param  array  $bindings  Parameter values
      * @return string The last inserted row ID
+     *
      * @throws PDOException If the query fails
      */
     /**
-     * @param array<int, mixed> $bindings
+     * @param  array<int, mixed>  $bindings
      */
     public function insert(string $sql, array $bindings = []): string
     {
         $this->execute($sql, $bindings);
         $id = $this->getPdo()->lastInsertId();
+
         return is_string($id) ? $id : '';
     }
 
     /**
      * Execute an UPDATE or DELETE query.
      *
-     * @param string $sql      SQL query with ? placeholders
-     * @param array<string, mixed>  $bindings Parameter values
+     * @param  string  $sql  SQL query with ? placeholders
+     * @param  array<int, mixed>  $bindings  Parameter values
      * @return int Number of affected rows
+     *
      * @throws PDOException If the query fails
      */
     public function executeWrite(string $sql, array $bindings = []): int
     {
         $stmt = $this->execute($sql, $bindings);
+
         return $stmt->rowCount();
     }
 
     /**
      * Execute a raw SQL statement with bindings.
      *
-     * @param string $sql
-     * @param array<int, mixed> $bindings
-     * @return PDOStatement
+     * @param  array<int, mixed>  $bindings
+     *
      * @throws PDOException If the query fails
      */
     public function execute(string $sql, array $bindings = []): PDOStatement
@@ -176,18 +203,19 @@ class Connection
         }
 
         $stmt->execute();
+
         return $stmt;
     }
 
     /**
      * Get the last inserted row ID.
      *
-     * @return string
      * @throws PDOException If the connection is not established
      */
     public function lastInsertId(): string
     {
         $id = $this->getPdo()->lastInsertId();
+
         return is_string($id) ? $id : '';
     }
 
@@ -196,7 +224,6 @@ class Connection
     /**
      * Begin a database transaction.
      *
-     * @return void
      * @throws PDOException If the transaction cannot be started
      */
     public function beginTransaction(): void
@@ -207,7 +234,6 @@ class Connection
     /**
      * Commit the active transaction.
      *
-     * @return void
      * @throws PDOException If the commit fails
      */
     public function commit(): void
@@ -218,7 +244,6 @@ class Connection
     /**
      * Roll back the active transaction.
      *
-     * @return void
      * @throws PDOException If the rollback fails
      */
     public function rollBack(): void
@@ -231,8 +256,8 @@ class Connection
     /**
      * Create a QueryBuilder for the given table.
      *
-     * @param string $table Table name
-     * @return QueryBuilder
+     * @param  string  $table  Table name
+     *
      * @see QueryBuilder
      */
     public function table(string $table): QueryBuilder

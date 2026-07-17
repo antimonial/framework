@@ -22,9 +22,9 @@ class Compiler
     /**
      * Compile a template file to a PHP file.
      *
-     * @param string $source Absolute path to the .php template
-     * @param string $target Absolute path for the compiled PHP
-     * @return void
+     * @param  string  $source  Absolute path to the .php template
+     * @param  string  $target  Absolute path for the compiled PHP
+     *
      * @throws RuntimeException If the source cannot be read
      */
     public function compile(string $source, string $target): void
@@ -37,7 +37,7 @@ class Compiler
         $php = $this->compileString($content);
 
         $dir = dirname($target);
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             mkdir($dir, 0775, true);
         }
 
@@ -46,9 +46,6 @@ class Compiler
 
     /**
      * Compile a template string into PHP.
-     *
-     * @param string $value
-     * @return string
      */
     public function compileString(string $value): string
     {
@@ -72,9 +69,6 @@ class Compiler
      * The expression inside (...) is captured as a whole (balanced enough
      * for typical templates), so the emitted PHP is valid. Paired blocks
      * (@if ... @else ... @endif) are matched up to their closer.
-     *
-     * @param string $value
-     * @return string
      */
     private function compileStatements(string $value): string
     {
@@ -84,9 +78,10 @@ class Compiler
         $footer = '';
 
         $value = preg_replace_callback(
-            '/^[ \t]*@extends' . $this->exprPattern() . '/',
+            '/^[ \t]*@extends'.$this->exprPattern().'/',
             function ($m) use (&$footer) {
                 $footer .= "<?php \$__engine->beginExtend({$m[1]}); ?>\n";
+
                 return '';
             },
             $value
@@ -98,16 +93,16 @@ class Compiler
         // (not post-processed inside the body), which is robust regardless
         // of where they appear on the line.
         $pairPattern = '/@(if|unless|foreach|for|while|switch|isset|empty|section)\b'
-            . $this->exprPattern() . '([\s\S]*?)@end\1/s';
+            .$this->exprPattern().'([\s\S]*?)@end\1/s';
 
         // Standalone (atomic) directives handled in the same iteration:
         // @elseif(expr), @else, @endif, @endunless, @endisset, @endempty.
         // @elseif carries its own (expr) and gets a dedicated pattern to
         // avoid PCRE group-numbering conflicts when exprPattern recurses.
-        $elseifPattern = '/@elseif' . $this->exprPattern() . '/';
+        $elseifPattern = '/@elseif'.$this->exprPattern().'/';
         $atomicPattern = '/@(else|endif|endunless|endisset|endempty)\b/';
 
-        $inlinePattern = '/@(include|yield|parent|set)\b' . $this->exprPattern() . '/';
+        $inlinePattern = '/@(include|yield|parent|set)\b'.$this->exprPattern().'/';
 
         // @csrf: standalone directive (no parentheses), emits a hidden field.
         $csrfPattern = '/@csrf\b/';
@@ -117,7 +112,7 @@ class Compiler
             $prevPhp = $value;
             $value = preg_replace_callback(
                 '/@php\b([\s\S]*?)@endphp/s',
-                fn ($m) => "<?php " . trim($m[1]) . " ?>",
+                fn ($m) => '<?php '.trim($m[1]).' ?>',
                 $value
             ) ?? $value;
         } while ($value !== $prevPhp);
@@ -132,6 +127,7 @@ class Compiler
                 $pairPattern,
                 function ($m) {
                     $inner = $this->compileStatements($m[3]);
+
                     return $this->compileDirective($m[1], $m[2], $inner, true);
                 },
                 $value
@@ -140,7 +136,7 @@ class Compiler
             $value = preg_replace_callback(
                 $elseifPattern,
                 function ($m) {
-                    return $this->compileAtomic('elseif' . $m[1]);
+                    return $this->compileAtomic('elseif'.$m[1]);
                 },
                 $value
             ) ?? $value;
@@ -163,12 +159,12 @@ class Compiler
 
             $value = preg_replace_callback(
                 $csrfPattern,
-                fn () => "<?php echo \\Antimonial\\Security\\Csrf::field(); ?>",
+                fn () => '<?php echo \\Antimonial\\Security\\Csrf::field(); ?>',
                 $value
             ) ?? $value;
         } while ($value !== $prev);
 
-        return $footer . $value;
+        return $footer.$value;
     }
 
     /**
@@ -178,8 +174,6 @@ class Compiler
      * (the nearest preceding capturing group) rather than group 1 of the
      * full pattern (which is the directive name). This lets
      * "if ($a > count($b))" capture intact.
-     *
-     * @return string
      */
     private function exprPattern(): string
     {
@@ -188,82 +182,79 @@ class Compiler
 
     /**
      * Compile an atomic (standalone) directive: @else, @elseif(expr),
+     *
      * @endif, @endunless, @endisset, @endempty.
      *
      * These are replaced in the iteration loop (Blade-style) rather than
      * post-processed inside a parent block, so their position on the line
      * does not matter.
      *
-     * @param string $token The matched directive text (e.g. "elseif($x)")
-     * @return string
+     * @param  string  $token  The matched directive text (e.g. "elseif($x)")
      */
     private function compileAtomic(string $token): string
     {
         if (str_starts_with($token, 'elseif')) {
-            preg_match('/^elseif' . $this->exprPattern() . '$/', $token, $m);
+            preg_match('/^elseif'.$this->exprPattern().'$/', $token, $m);
+
             return "<?php elseif{$m[1]}: ?>";
         }
 
         return match ($token) {
-            'else'       => '<?php else: ?>',
-            'endif'      => '<?php endif; ?>',
-            'endunless'  => '<?php endif; ?>',
-            'endisset'   => '<?php endif; ?>',
-            'endempty'   => '<?php endif; ?>',
-            default      => '',
+            'else' => '<?php else: ?>',
+            'endif' => '<?php endif; ?>',
+            'endunless' => '<?php endif; ?>',
+            'endisset' => '<?php endif; ?>',
+            'endempty' => '<?php endif; ?>',
+            default => '',
         };
     }
 
     /**
      * Map a directive name + expression to PHP.
      *
-     * @param string $name   Directive name (if, foreach, include, ...)
-     * @param string $expr   The parenthesized expression, e.g. "($users as $u)"
-     * @param string $inner  Body between open and @end (for paired directives)
-     * @param bool   $paired Whether this directive has an @end<name> closer
-     * @return string
+     * @param  string  $name  Directive name (if, foreach, include, ...)
+     * @param  string  $expr  The parenthesized expression, e.g. "($users as $u)"
+     * @param  string  $inner  Body between open and @end (for paired directives)
+     * @param  bool  $paired  Whether this directive has an @end<name> closer
      */
     private function compileDirective(string $name, string $expr, string $inner, bool $paired): string
     {
         $open = match ($name) {
-            'if'      => "<?php if{$expr}: ?>",
-            'unless'  => "<?php if (!( {$expr} )): ?>",
+            'if' => "<?php if{$expr}: ?>",
+            'unless' => "<?php if (!( {$expr} )): ?>",
             'foreach' => "<?php foreach{$expr}: ?>",
-            'for'     => "<?php for{$expr}: ?>",
-            'while'   => "<?php while{$expr}: ?>",
-            'switch'  => "<?php switch{$expr}: ?>",
-            'isset'   => "<?php if (isset{$expr}): ?>",
-            'empty'   => "<?php if (empty{$expr}): ?>",
+            'for' => "<?php for{$expr}: ?>",
+            'while' => "<?php while{$expr}: ?>",
+            'switch' => "<?php switch{$expr}: ?>",
+            'isset' => "<?php if (isset{$expr}): ?>",
+            'empty' => "<?php if (empty{$expr}): ?>",
             'section' => "<?php \$__engine->section{$expr}; ?>",
             'include' => "<?php echo \$__engine->include{$expr}; ?>",
-            'yield'   => "<?php echo \$__engine->yield{$expr}; ?>",
-            'parent'  => "<?php echo \$__engine->parent(); ?>",
-            'set'     => $this->compileSet($expr),
-            'php'     => "<?php " . trim($expr, '()') . " ?>",
-            default   => '',
+            'yield' => "<?php echo \$__engine->yield{$expr}; ?>",
+            'parent' => '<?php echo $__engine->parent(); ?>',
+            'set' => $this->compileSet($expr),
+            'php' => '<?php '.trim($expr, '()').' ?>',
+            default => '',
         };
 
-        if (!$paired) {
+        if (! $paired) {
             return $open;
         }
 
         $close = match ($name) {
-            'section' => "<?php \$__engine->endSection(); ?>",
-            'unless'  => '<?php endif; ?>',
-            'isset'   => '<?php endif; ?>',
-            'empty'   => '<?php endif; ?>',
-            'php'     => '<?php endif; ?>',
-            default   => '<?php end' . $name . '; ?>',
+            'section' => '<?php $__engine->endSection(); ?>',
+            'unless' => '<?php endif; ?>',
+            'isset' => '<?php endif; ?>',
+            'empty' => '<?php endif; ?>',
+            'php' => '<?php endif; ?>',
+            default => '<?php end'.$name.'; ?>',
         };
 
-        return $open . $inner . $close;
+        return $open.$inner.$close;
     }
 
     /**
      * Compile a @set directive body to PHP.
-     *
-     * @param string $body
-     * @return string
      */
     private function compileSet(string $body): string
     {
@@ -272,6 +263,7 @@ class Compiler
         if (str_starts_with($body, '(') && str_ends_with($body, ')')) {
             $body = substr($body, 1, -1);
         }
+
         return "<?php {$body}; ?>";
     }
 
@@ -279,9 +271,6 @@ class Compiler
 
     /**
      * Compile raw {{{ }}} then escaped {{ }} (with optional |filters).
-     *
-     * @param string $value
-     * @return string
      */
     private function compileEchos(string $value): string
     {
@@ -297,11 +286,12 @@ class Compiler
             '/{{\s*(.+?)\s*}}/s',
             function ($m) {
                 $expr = trim($m[1]);
-                if (!str_contains($expr, '|')) {
+                if (! str_contains($expr, '|')) {
                     return "<?= htmlspecialchars((string) ({$expr}), ENT_QUOTES, 'UTF-8') ?>";
                 }
                 [$var, $filters] = array_map('trim', explode('|', $expr, 2));
-                return "<?= htmlspecialchars((string) \\Antimonial\\View\\Filters::apply({$var}, " . var_export($filters, true) . "), ENT_QUOTES, 'UTF-8') ?>";
+
+                return "<?= htmlspecialchars((string) \\Antimonial\\View\\Filters::apply({$var}, ".var_export($filters, true)."), ENT_QUOTES, 'UTF-8') ?>";
             },
             $value
         ) ?? $value;

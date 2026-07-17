@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Antimonial\Middleware;
 
+use Antimonial\Core\App;
 use Antimonial\Http\Request;
 use Antimonial\Http\Response;
 
@@ -30,16 +31,14 @@ use Antimonial\Http\Response;
  *       }
  *   }
  *
- * @see \Antimonial\Core\App::runMiddleware()
+ * @see App::runMiddleware()
  */
 interface MiddlewareInterface
 {
     /**
      * Handle an incoming request.
      *
-     * @param Request  $request
-     * @param callable $next callable(Request): Response
-     * @return Response
+     * @param  callable  $next  callable(Request): Response
      */
     public function handle(Request $request, callable $next): Response;
 }

@@ -122,8 +122,8 @@ class QueryBuilder
     private string $primaryKey = 'id';
 
     /**
-     * @param Connection $connection Database connection
-     * @param string     $table      Table name
+     * @param  Connection  $connection  Database connection
+     * @param  string  $table  Table name
      */
     public function __construct(Connection $connection, string $table)
     {
@@ -138,12 +138,13 @@ class QueryBuilder
      *
      * @example ->select('name', 'email')
      *
-     * @param string ...$columns Column names
+     * @param  string  ...$columns  Column names
      * @return $this
      */
     public function select(string ...$columns): static
     {
         $this->select = $columns;
+
         return $this;
     }
 
@@ -155,18 +156,19 @@ class QueryBuilder
     public function distinct(): static
     {
         $this->distinct = true;
+
         return $this;
     }
 
     /**
      * Set the primary key column used by find().
      *
-     * @param string $key
      * @return $this
      */
     public function setPrimaryKey(string $key): static
     {
         $this->primaryKey = $key;
+
         return $this;
     }
 
@@ -182,9 +184,9 @@ class QueryBuilder
      * @example ->where('active', true)
      * @example ->where(function ($q) { $q->whereNull('assignee_id')->orWhere('priority', 'high'); })
      *
-     * @param string|Closure $column          Column name or Closure for grouped conditions
-     * @param mixed          $operatorOrValue Operator or value when using shorthand
-     * @param mixed          $value           Value when using operator form
+     * @param  string|Closure  $column  Column name or Closure for grouped conditions
+     * @param  mixed  $operatorOrValue  Operator or value when using shorthand
+     * @param  mixed  $value  Value when using operator form
      * @return $this
      */
     public function where(string|Closure $column, mixed $operatorOrValue = null, mixed $value = null): static
@@ -195,28 +197,29 @@ class QueryBuilder
             $sql = $sub->compileWheres();
             if ($sql !== '') {
                 $this->wheres[] = [
-                    'logic'    => 'AND',
-                    'sql'      => '(' . $sql . ')',
+                    'logic' => 'AND',
+                    'sql' => '('.$sql.')',
                     'bindings' => $sub->getWhereBindings(),
                 ];
             }
+
             return $this;
         }
 
         $column = $this->assertIdentifier($column);
 
-        if ($value === null && !$this->isOperator($operatorOrValue)) {
+        if ($value === null && ! $this->isOperator($operatorOrValue)) {
             $value = $operatorOrValue;
             /** @var string $operatorOrValue */
             $operatorOrValue = '=';
         }
 
         /** @var string $operatorOrValue */
-        $operatorOrValue = (string) $operatorOrValue;
+        $operatorOrValue = is_string($operatorOrValue) ? $operatorOrValue : '';
         $placeholder = $this->addBinding($value);
         $this->wheres[] = [
-            'logic'    => 'AND',
-            'sql'      => "{$column} {$operatorOrValue} {$placeholder}",
+            'logic' => 'AND',
+            'sql' => "{$column} {$operatorOrValue} {$placeholder}",
             'bindings' => [$value],
         ];
 
@@ -233,9 +236,7 @@ class QueryBuilder
      * @example ->where('active', true)->orWhere('role', 'admin')
      * @example ->where('name', 'foo')->orWhere(function ($q) { $q->where('age', 18)->where('active', true); })
      *
-     * @param string|Closure $column          Column name or Closure for grouped conditions
-     * @param mixed          $operatorOrValue
-     * @param mixed          $value
+     * @param  string|Closure  $column  Column name or Closure for grouped conditions
      * @return $this
      */
     public function orWhere(string|Closure $column, mixed $operatorOrValue = null, mixed $value = null): static
@@ -246,25 +247,28 @@ class QueryBuilder
             $sql = $sub->compileWheres();
             if ($sql !== '') {
                 $this->wheres[] = [
-                    'logic'    => 'OR',
-                    'sql'      => '(' . $sql . ')',
+                    'logic' => 'OR',
+                    'sql' => '('.$sql.')',
                     'bindings' => $sub->getWhereBindings(),
                 ];
             }
+
             return $this;
         }
 
         $column = $this->assertIdentifier($column);
 
-        if ($value === null && !$this->isOperator($operatorOrValue)) {
+        if ($value === null && ! $this->isOperator($operatorOrValue)) {
             $value = $operatorOrValue;
             $operatorOrValue = '=';
         }
 
+        /** @var string $operatorOrValue */
+        $operatorOrValue = is_string($operatorOrValue) ? $operatorOrValue : '';
         $placeholder = $this->addBinding($value);
         $this->wheres[] = [
-            'logic'    => 'OR',
-            'sql'      => "{$column} " . (string) $operatorOrValue . " {$placeholder}",
+            'logic' => 'OR',
+            'sql' => "{$column} ".$operatorOrValue." {$placeholder}",
             'bindings' => [$value],
         ];
 
@@ -276,8 +280,7 @@ class QueryBuilder
      *
      * @example ->whereIn('id', [1, 2, 3])
      *
-     * @param string $column
-     * @param array<int, mixed> $values
+     * @param  array<int, mixed>  $values
      * @return $this
      */
     public function whereIn(string $column, array $values): static
@@ -286,6 +289,7 @@ class QueryBuilder
 
         if (empty($values)) {
             $this->wheres[] = ['logic' => 'AND', 'sql' => '1 = 0', 'bindings' => []];
+
             return $this;
         }
 
@@ -297,8 +301,8 @@ class QueryBuilder
         }
 
         $this->wheres[] = [
-            'logic'    => 'AND',
-            'sql'      => "{$column} IN (" . implode(', ', $placeholders) . ")",
+            'logic' => 'AND',
+            'sql' => "{$column} IN (".implode(', ', $placeholders).')',
             'bindings' => $bindings,
         ];
 
@@ -308,8 +312,7 @@ class QueryBuilder
     /**
      * Add a WHERE NOT IN clause.
      *
-     * @param string $column
-     * @param array<int, mixed> $values
+     * @param  array<int, mixed>  $values
      * @return $this
      */
     public function whereNotIn(string $column, array $values): static
@@ -328,8 +331,8 @@ class QueryBuilder
         }
 
         $this->wheres[] = [
-            'logic'    => 'AND',
-            'sql'      => "{$column} NOT IN (" . implode(', ', $placeholders) . ")",
+            'logic' => 'AND',
+            'sql' => "{$column} NOT IN (".implode(', ', $placeholders).')',
             'bindings' => $bindings,
         ];
 
@@ -341,26 +344,26 @@ class QueryBuilder
      *
      * @example ->whereNull('deleted_at')
      *
-     * @param string $column
      * @return $this
      */
     public function whereNull(string $column): static
     {
         $column = $this->assertIdentifier($column);
         $this->wheres[] = ['logic' => 'AND', 'sql' => "{$column} IS NULL", 'bindings' => []];
+
         return $this;
     }
 
     /**
      * Add a WHERE IS NOT NULL clause.
      *
-     * @param string $column
      * @return $this
      */
     public function whereNotNull(string $column): static
     {
         $column = $this->assertIdentifier($column);
         $this->wheres[] = ['logic' => 'AND', 'sql' => "{$column} IS NOT NULL", 'bindings' => []];
+
         return $this;
     }
 
@@ -369,13 +372,14 @@ class QueryBuilder
      *
      * @example ->whereRaw('age > ? OR role = ?', [18, 'admin'])
      *
-     * @param string $sql      Raw SQL fragment (e.g. 'age > ? OR role = ?')
-     * @param array<int, mixed> $bindings Values for ? placeholders
+     * @param  string  $sql  Raw SQL fragment (e.g. 'age > ? OR role = ?')
+     * @param  array<int, mixed>  $bindings  Values for ? placeholders
      * @return $this
      */
     public function whereRaw(string $sql, array $bindings = []): static
     {
         $this->wheres[] = ['logic' => 'AND', 'sql' => $sql, 'bindings' => $bindings];
+
         return $this;
     }
 
@@ -384,11 +388,11 @@ class QueryBuilder
      *
      * @example ->join('posts', 'users.id', '=', 'posts.user_id')
      *
-     * @param string $table Join table name
-     * @param string $col1  Left column
-     * @param string $op    Operator (=, <, >, etc.)
-     * @param string $col2  Right column
-     * @param string $type  Join type (INNER, LEFT, RIGHT)
+     * @param  string  $table  Join table name
+     * @param  string  $col1  Left column
+     * @param  string  $op  Operator (=, <, >, etc.)
+     * @param  string  $col2  Right column
+     * @param  string  $type  Join type (INNER, LEFT, RIGHT)
      * @return $this
      */
     public function join(string $table, string $col1, string $op, string $col2, string $type = 'INNER'): static
@@ -398,15 +402,16 @@ class QueryBuilder
         $col2 = $this->assertIdentifier($col2);
 
         $allowedOps = ['=', '!=', '<>', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE'];
-        if (!in_array(strtoupper($op), $allowedOps, true)) {
+        if (! in_array(strtoupper($op), $allowedOps, true)) {
             throw new InvalidArgumentException("Invalid JOIN operator: {$op}");
         }
 
         $this->joins[] = [
-            'type'  => strtoupper($type),
+            'type' => strtoupper($type),
             'table' => $table,
-            'sql'   => "{$type} JOIN {$table} ON {$col1} {$op} {$col2}",
+            'sql' => "{$type} JOIN {$table} ON {$col1} {$op} {$col2}",
         ];
+
         return $this;
     }
 
@@ -415,10 +420,6 @@ class QueryBuilder
      *
      * @example ->leftJoin('posts', 'users.id', '=', 'posts.user_id')
      *
-     * @param string $table
-     * @param string $col1
-     * @param string $op
-     * @param string $col2
      * @return $this
      */
     public function leftJoin(string $table, string $col1, string $op, string $col2): static
@@ -429,7 +430,6 @@ class QueryBuilder
     /**
      * Add a GROUP BY clause.
      *
-     * @param string ...$columns
      * @return $this
      */
     public function groupBy(string ...$columns): static
@@ -438,15 +438,13 @@ class QueryBuilder
             $this->assertIdentifier($column);
         }
         $this->groups = array_merge($this->groups, $columns);
+
         return $this;
     }
 
     /**
      * Add a HAVING clause.
      *
-     * @param string $column
-     * @param string $operator
-     * @param mixed  $value
      * @return $this
      */
     public function having(string $column, string $operator, mixed $value): static
@@ -454,15 +452,16 @@ class QueryBuilder
         $column = $this->assertIdentifier($column);
 
         $allowedOps = ['=', '!=', '<>', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE'];
-        if (!in_array(strtoupper($operator), $allowedOps, true)) {
+        if (! in_array(strtoupper($operator), $allowedOps, true)) {
             throw new InvalidArgumentException("Invalid HAVING operator: {$operator}");
         }
 
         $placeholder = $this->addBinding($value);
         $this->havings[] = [
-            'sql'      => "{$column} {$operator} {$placeholder}",
+            'sql' => "{$column} {$operator} {$placeholder}",
             'bindings' => [$value],
         ];
+
         return $this;
     }
 
@@ -471,8 +470,7 @@ class QueryBuilder
      *
      * @example ->orderBy('name', 'DESC')
      *
-     * @param string $column
-     * @param string $direction 'ASC' or 'DESC'
+     * @param  string  $direction  'ASC' or 'DESC'
      * @return $this
      */
     public function orderBy(string $column, string $direction = 'ASC'): static
@@ -480,30 +478,31 @@ class QueryBuilder
         $column = $this->assertIdentifier($column);
         $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
         $this->orders[] = ['column' => $column, 'direction' => $direction];
+
         return $this;
     }
 
     /**
      * Set the LIMIT clause.
      *
-     * @param int $limit
      * @return $this
      */
     public function limit(int $limit): static
     {
         $this->limit = $limit;
+
         return $this;
     }
 
     /**
      * Set the OFFSET clause.
      *
-     * @param int $offset
      * @return $this
      */
     public function offset(int $offset): static
     {
         $this->offset = $offset;
+
         return $this;
     }
 
@@ -513,26 +512,31 @@ class QueryBuilder
      * Execute the query and return all results.
      *
      * @return object[] Array of stdClass objects
+     *
      * @throws PDOException If the query fails
+     */
+    /**
+     * @return array<object>
      */
     public function get(): array
     {
         $sql = $this->compileSelect();
         $results = $this->connection->select($sql, $this->getWhereBindings());
         $this->reset();
+
         return $results;
     }
 
     /**
      * Get the first result row, or null if none found.
      *
-     * @return object|null
      * @throws PDOException If the query fails
      */
     public function first(): ?object
     {
         $this->limit = 1;
         $results = $this->get();
+
         return $results[0] ?? null;
     }
 
@@ -541,9 +545,8 @@ class QueryBuilder
      *
      * @example $user = DB::table('users')->find(42);
      *
-     * @param mixed $id
-     * @return object|null
      * @throws PDOException If the query fails
+     *
      * @see Model::find()
      */
     public function find(mixed $id): ?object
@@ -556,13 +559,12 @@ class QueryBuilder
      *
      * @example $email = DB::table('users')->where('id', 1)->value('email');
      *
-     * @param string $column
-     * @return mixed
      * @throws PDOException If the query fails
      */
     public function value(string $column): mixed
     {
         $row = $this->select($column)->first();
+
         return $row->$column ?? null;
     }
 
@@ -571,9 +573,10 @@ class QueryBuilder
      *
      * @example $names = DB::table('users')->pluck('id', 'name');
      *
-     * @param string      $key      Column to use as array key
-     * @param string|null $valueKey Column to use as array value (null = entire row)
+     * @param  string  $key  Column to use as array key
+     * @param  string|null  $valueKey  Column to use as array value (null = entire row)
      * @return array<int|string, mixed>
+     *
      * @throws PDOException If the query fails
      */
     public function pluck(string $key, ?string $valueKey = null): array
@@ -596,7 +599,6 @@ class QueryBuilder
     /**
      * Count the number of rows matching the query.
      *
-     * @return int
      * @throws PDOException If the query fails
      */
     public function count(): int
@@ -609,14 +611,16 @@ class QueryBuilder
         $result = $this->connection->select($sql, $this->getWhereBindings());
         $this->reset();
 
-        $aggregate = $result[0]->aggregate ?? 0;
+        /** @var object{aggregate?: mixed} $first */
+        $first = $result[0];
+        $aggregate = $first->aggregate ?? 0;
+
         return is_numeric($aggregate) ? (int) $aggregate : 0;
     }
 
     /**
      * Check if any rows match the query.
      *
-     * @return bool
      * @throws PDOException If the query fails
      */
     public function exists(): bool
@@ -627,34 +631,30 @@ class QueryBuilder
     /**
      * Calculate the sum of a column.
      *
-     * @param string $column
-     * @return float
      * @throws PDOException If the query fails
      */
     public function sum(string $column): float
     {
         $value = $this->aggregate("SUM({$column})");
+
         return is_numeric($value) ? (float) $value : 0.0;
     }
 
     /**
      * Calculate the average of a column.
      *
-     * @param string $column
-     * @return float
      * @throws PDOException If the query fails
      */
     public function avg(string $column): float
     {
         $value = $this->aggregate("AVG({$column})");
+
         return is_numeric($value) ? (float) $value : 0.0;
     }
 
     /**
      * Get the minimum value of a column.
      *
-     * @param string $column
-     * @return mixed
      * @throws PDOException If the query fails
      */
     public function min(string $column): mixed
@@ -665,8 +665,6 @@ class QueryBuilder
     /**
      * Get the maximum value of a column.
      *
-     * @param string $column
-     * @return mixed
      * @throws PDOException If the query fails
      */
     public function max(string $column): mixed
@@ -677,12 +675,13 @@ class QueryBuilder
     /**
      * Run a single-column aggregate query and return its value.
      *
-     * @param string $expression Aggregate expression (e.g. 'SUM(amount)')
+     * @param  string  $expression  Aggregate expression (e.g. 'SUM(amount)')
      * @return mixed The aggregate value, or null if no rows matched
      */
     private function aggregate(string $expression): mixed
     {
         $row = $this->select($expression)->first();
+
         return $row === null ? null : array_values((array) $row)[0] ?? null;
     }
 
@@ -693,9 +692,11 @@ class QueryBuilder
      *
      * @example DB::table('users')->insert(['name' => 'John', 'email' => 'john@example.com']);
      *
-     * @param array<string, mixed> $data Column => value pairs
+     * @param  array<string, mixed>  $data  Column => value pairs
      * @return string Last inserted ID
+     *
      * @throws PDOException If the insert fails
+     *
      * @see Model::insert()
      */
     public function insert(array $data): string
@@ -716,7 +717,7 @@ class QueryBuilder
         $valueList = implode(', ', $placeholders);
 
         $sql = "INSERT INTO {$this->table} ({$columnList}) VALUES ({$valueList})";
-        $filteredBindings = array_values(array_filter($bindings, fn($v) => !$v instanceof Raw));
+        $filteredBindings = array_values(array_filter($bindings, fn ($v) => ! $v instanceof Raw));
         $id = $this->connection->insert($sql, $filteredBindings);
         $this->reset();
 
@@ -728,9 +729,11 @@ class QueryBuilder
      *
      * @example DB::table('users')->where('id', 42)->update(['name' => 'Jane']);
      *
-     * @param array<string, mixed> $data Column => value pairs
+     * @param  array<string, mixed>  $data  Column => value pairs
      * @return int Affected row count
+     *
      * @throws PDOException If the update fails
+     *
      * @see Model::update()
      */
     public function update(array $data): int
@@ -747,10 +750,10 @@ class QueryBuilder
 
         $setClause = implode(', ', $setParts);
         $whereClause = $this->compileWheres();
-        $sql = "UPDATE {$this->table} SET {$setClause}" . ($whereClause !== '' ? " WHERE {$whereClause}" : '');
+        $sql = "UPDATE {$this->table} SET {$setClause}".($whereClause !== '' ? " WHERE {$whereClause}" : '');
 
         $bindings = array_merge($bindings, $this->getWhereBindings());
-        $bindings = array_values(array_filter($bindings, fn($v) => !$v instanceof Raw));
+        $bindings = array_values(array_filter($bindings, fn ($v) => ! $v instanceof Raw));
         $affected = $this->connection->executeWrite($sql, $bindings);
         $this->reset();
 
@@ -763,13 +766,15 @@ class QueryBuilder
      * @example DB::table('users')->where('id', 42)->delete();
      *
      * @return int Affected row count
+     *
      * @throws PDOException If the delete fails
+     *
      * @see Model::delete()
      */
     public function delete(): int
     {
         $whereClause = $this->compileWheres();
-        $sql = "DELETE FROM {$this->table}" . ($whereClause !== '' ? " WHERE {$whereClause}" : '');
+        $sql = "DELETE FROM {$this->table}".($whereClause !== '' ? " WHERE {$whereClause}" : '');
 
         $bindings = $this->getWhereBindings();
         $affected = $this->connection->executeWrite($sql, $bindings);
@@ -783,28 +788,28 @@ class QueryBuilder
      *
      * @example DB::table('users')->where('id', 42)->increment('views');
      *
-     * @param string $column
-     * @param int    $amount
      * @return int Affected row count
+     *
      * @throws PDOException If the update fails
      */
     public function increment(string $column, int $amount = 1): int
     {
         $column = $this->assertIdentifier($column);
+
         return $this->update([$column => new Raw("{$column} + {$amount}")]);
     }
 
     /**
      * Decrement a column's value.
      *
-     * @param string $column
-     * @param int    $amount
      * @return int Affected row count
+     *
      * @throws PDOException If the update fails
      */
     public function decrement(string $column, int $amount = 1): int
     {
         $column = $this->assertIdentifier($column);
+
         return $this->update([$column => new Raw("{$column} - {$amount}")]);
     }
 
@@ -816,6 +821,7 @@ class QueryBuilder
      * Useful for debugging and logging.
      *
      * @return string The compiled SELECT SQL query
+     *
      * @see getSql()
      */
     public function toSql(): string
@@ -826,7 +832,6 @@ class QueryBuilder
     /**
      * Alias of toSql() for backwards compatibility.
      *
-     * @return string
      * @see toSql()
      */
     public function getSql(): string
@@ -838,8 +843,6 @@ class QueryBuilder
 
     /**
      * Compile the accumulated clauses into a SELECT SQL string.
-     *
-     * @return string
      */
     private function compileSelect(): string
     {
@@ -847,40 +850,40 @@ class QueryBuilder
         $columns = implode(', ', $this->select);
         $sql = "SELECT {$distinct}{$columns} FROM {$this->table}";
 
-        if (!empty($this->joins)) {
+        if (! empty($this->joins)) {
             foreach ($this->joins as $join) {
-                $sql .= ' ' . $join['sql'];
+                $sql .= ' '.$join['sql'];
             }
         }
 
         $whereClause = $this->compileWheres();
         if ($whereClause !== '') {
-            $sql .= ' WHERE ' . $whereClause;
+            $sql .= ' WHERE '.$whereClause;
         }
 
-        if (!empty($this->groups)) {
-            $sql .= ' GROUP BY ' . implode(', ', $this->groups);
+        if (! empty($this->groups)) {
+            $sql .= ' GROUP BY '.implode(', ', $this->groups);
         }
 
-        if (!empty($this->havings)) {
+        if (! empty($this->havings)) {
             $havingParts = array_column($this->havings, 'sql');
-            $sql .= ' HAVING ' . implode(' AND ', $havingParts);
+            $sql .= ' HAVING '.implode(' AND ', $havingParts);
         }
 
-        if (!empty($this->orders)) {
+        if (! empty($this->orders)) {
             $orderParts = array_map(
-                fn(array $o) => "{$o['column']} {$o['direction']}",
+                fn (array $o) => "{$o['column']} {$o['direction']}",
                 $this->orders
             );
-            $sql .= ' ORDER BY ' . implode(', ', $orderParts);
+            $sql .= ' ORDER BY '.implode(', ', $orderParts);
         }
 
         if ($this->limit !== null) {
-            $sql .= ' LIMIT ' . $this->limit;
+            $sql .= ' LIMIT '.$this->limit;
         }
 
         if ($this->offset !== null) {
-            $sql .= ' OFFSET ' . $this->offset;
+            $sql .= ' OFFSET '.$this->offset;
         }
 
         return $sql;
@@ -888,8 +891,6 @@ class QueryBuilder
 
     /**
      * Compile all WHERE clauses into a single SQL string.
-     *
-     * @return string
      */
     private function compileWheres(): string
     {
@@ -925,13 +926,13 @@ class QueryBuilder
                 $bindings[] = $value;
             }
         }
+
         return $bindings;
     }
 
     /**
      * Add a value to the bindings array and return its placeholder.
      *
-     * @param mixed $value
      * @return string The ? placeholder (or raw expression string)
      */
     private function addBinding(mixed $value): string
@@ -954,13 +955,13 @@ class QueryBuilder
      * Allowed forms: a simple name (`user`) or a qualified name
      * with a single dot (`user.id`).
      *
-     * @param string $name
      * @return string The validated identifier
+     *
      * @throws InvalidArgumentException If the identifier is invalid
      */
     private function assertIdentifier(string $name): string
     {
-        if ($name === '' || !preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*$/', $name)) {
+        if ($name === '' || ! preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*$/', $name)) {
             throw new InvalidArgumentException("Invalid SQL identifier: {$name}");
         }
 
@@ -972,14 +973,13 @@ class QueryBuilder
      *
      * Used by where()/orWhere() to decide whether the second argument
      * is an operator (e.g. '>') or a bare value for an implicit '='.
-     *
-     * @param mixed $value
-     * @return bool
      */
     private function isOperator(mixed $value): bool
     {
+        $normalized = is_string($value) ? strtoupper($value) : '';
+
         return in_array(
-            strtoupper((string) $value),
+            $normalized,
             ['=', '!=', '<>', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'BETWEEN', 'IS', 'IS NOT'],
             true
         );
@@ -987,8 +987,6 @@ class QueryBuilder
 
     /**
      * Reset the builder state after execution.
-     *
-     * @return void
      */
     private function reset(): void
     {

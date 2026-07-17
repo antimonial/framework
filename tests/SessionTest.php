@@ -23,7 +23,7 @@ final class SessionTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->dir = sys_get_temp_dir() . '/ant_sess_' . uniqid();
+        $this->dir = sys_get_temp_dir().'/ant_sess_'.uniqid();
         mkdir($this->dir, 0777, true);
         ini_set('session.save_path', $this->dir);
         ini_set('session.use_cookies', '0');
@@ -32,11 +32,13 @@ final class SessionTest extends TestCase
     protected function tearDown(): void
     {
         @session_write_close();
-        foreach (glob($this->dir . '/*') ?: [] as $f) { unlink($f); }
+        foreach (glob($this->dir.'/*') ?: [] as $f) {
+            unlink($f);
+        }
         @rmdir($this->dir);
     }
 
-    public function testStartAndPutGet(): void
+    public function test_start_and_put_get(): void
     {
         Session::start();
         self::assertSame(PHP_SESSION_ACTIVE, session_status());
@@ -45,7 +47,7 @@ final class SessionTest extends TestCase
         self::assertTrue(Session::has('user'));
     }
 
-    public function testPullGetsAndForgets(): void
+    public function test_pull_gets_and_forgets(): void
     {
         Session::start();
         Session::put('once', 'x');
@@ -53,7 +55,7 @@ final class SessionTest extends TestCase
         self::assertFalse(Session::has('once'));
     }
 
-    public function testFlashAgesOutNextRequest(): void
+    public function test_flash_ages_out_next_request(): void
     {
         Session::start();
         Session::flash('msg', 'hi');
@@ -63,7 +65,7 @@ final class SessionTest extends TestCase
         self::assertNull(Session::getFlash('msg'));
     }
 
-    public function testRegenerateChangesId(): void
+    public function test_regenerate_changes_id(): void
     {
         Session::start();
         $before = Session::id();
@@ -71,7 +73,7 @@ final class SessionTest extends TestCase
         self::assertNotSame($before, Session::id());
     }
 
-    public function testCsrfTokenStableAndVerifies(): void
+    public function test_csrf_token_stable_and_verifies(): void
     {
         Session::start();
         $token = Csrf::token();
@@ -81,21 +83,21 @@ final class SessionTest extends TestCase
         self::assertTrue(Csrf::verify($token));
     }
 
-    public function testCsrfRejectsWrongToken(): void
+    public function test_csrf_rejects_wrong_token(): void
     {
         Session::start();
         $this->expectException(TokenMismatchException::class);
         Csrf::verify('wrong');
     }
 
-    public function testCsrfRejectsNullToken(): void
+    public function test_csrf_rejects_null_token(): void
     {
         Session::start();
         $this->expectException(TokenMismatchException::class);
         Csrf::verify(null);
     }
 
-    public function testCsrfFieldRendersHiddenInput(): void
+    public function test_csrf_field_renders_hidden_input(): void
     {
         Session::start();
         $field = Csrf::field();
@@ -104,9 +106,9 @@ final class SessionTest extends TestCase
         self::assertStringContainsString($token, $field);
     }
 
-    public function testCsrfDirectiveCompiles(): void
+    public function test_csrf_directive_compiles(): void
     {
-        $out = (new Compiler())->compileString('<form>@csrf</form>');
+        $out = (new Compiler)->compileString('<form>@csrf</form>');
         self::assertStringContainsString('Csrf::field()', $out);
         self::assertStringContainsString('<form>', $out);
     }
