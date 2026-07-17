@@ -8,17 +8,27 @@ use Antimonial\Database\Connection;
 use Antimonial\Database\QueryBuilder;
 use Antimonial\Model\Model;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
-class ModelTest_User extends Model {}
-class ModelTest_BlogPost extends Model {}
+class ModelTest_User extends Model
+{
+    protected string $table = 'users';
+}
+class ModelTest_BlogPost extends Model
+{
+    protected string $table = 'blog_posts';
+}
 class ModelTest_CustomTable extends Model
 {
     protected string $table = 'explicit_table';
 }
 class ModelTest_WithTimestamps extends Model
 {
+    protected string $table = 'users';
+
     protected bool $timestamps = true;
 }
+class ModelTest_NoTable extends Model {}
 
 final class ModelTest extends TestCase
 {
@@ -34,28 +44,24 @@ final class ModelTest extends TestCase
         );
     }
 
-    public function test_table_name_auto_guess(): void
+    public function test_table_is_required(): void
     {
-        $model = new ModelTest_User($this->conn);
-        $table = (new \ReflectionProperty($model, 'table'))->getValue($model);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('must declare a $table property');
 
-        $this->assertStringEndsWith('_users', $table);
-        $this->assertStringContainsString('model_test', $table);
-    }
-
-    public function test_multi_word_table_name(): void
-    {
-        $model = new ModelTest_BlogPost($this->conn);
-        $table = (new \ReflectionProperty($model, 'table'))->getValue($model);
-
-        $this->assertStringEndsWith('_posts', $table);
-        $this->assertStringContainsString('blog', $table);
+        new ModelTest_NoTable($this->conn);
     }
 
     public function test_explicit_table_name(): void
     {
         $model = new ModelTest_CustomTable($this->conn);
         $this->assertSame('explicit_table', (new \ReflectionProperty($model, 'table'))->getValue($model));
+    }
+
+    public function test_snake_case_table_is_used_verbatim(): void
+    {
+        $model = new ModelTest_BlogPost($this->conn);
+        $this->assertSame('blog_posts', (new \ReflectionProperty($model, 'table'))->getValue($model));
     }
 
     public function test_find_by_primary_key(): void

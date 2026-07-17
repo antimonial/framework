@@ -8,6 +8,7 @@ use Antimonial\Database\Connection;
 use Antimonial\Database\DB;
 use Antimonial\Database\QueryBuilder;
 use PDOException;
+use RuntimeException;
 
 /**
  * Base model class.
@@ -15,10 +16,14 @@ use PDOException;
  * A thin CRUD wrapper around QueryBuilder. Models map to database
  * tables and provide convenience methods for common operations.
  *
- * This is intentionally NOT an ORM. Relations are not inferred,
- * there is no attribute casting and no change tracking. You see
- * exactly what queries run, and you can always drop down to the
- * QueryBuilder for complex queries.
+ * This is intentionally NOT an ORM. There is no relation inference,
+ * no attribute casting and no change tracking. You see exactly what
+ * queries run, and you can always drop down to the QueryBuilder for
+ * complex queries.
+ *
+ * The framework never guesses the table for you: you must declare it
+ * explicitly on every model. That is the whole point — you tell the
+ * framework what to do instead of it guessing.
  *
  * @example
  *   class User extends Model
@@ -39,13 +44,15 @@ class Model
     /**
      * Database table name.
      *
-     * If empty, auto-detected from the class name:
-     *  User -> users, BlogPost -> blog_posts
+     * Required. The model throws at construction time if left empty —
+     * the framework does not infer table names from class names.
      */
     protected string $table = '';
 
     /**
      * Primary key column name.
+     *
+     * Defaults to 'id'. Override it if your table uses a different key.
      */
     protected string $primaryKey = 'id';
 
@@ -61,13 +68,20 @@ class Model
 
     /**
      * @param  Connection|null  $db  Optional connection override
+     *
+     * @throws RuntimeException If $table is not declared on the model
      */
     public function __construct(?Connection $db = null)
     {
         $this->db = $db;
 
         if ($this->table === '') {
-            $this->table = $this->guessTableName();
+            throw new RuntimeException(
+                sprintf(
+                    'Model %s must declare a $table property; the framework does not infer table names.',
+                    static::class
+                )
+            );
         }
     }
 
@@ -199,30 +213,6 @@ class Model
         }
 
         return $this->db;
-    }
-
-    /**
-     * Auto-detect the table name from the class name.
-     *
-     * Converts PascalCase to snake_case and applies a basic plural
-     * suffix:
-     *  User     -> users
-     *  BlogPost -> blog_posts
-     *  Category -> categorys   (naive 's' suffix — set $table explicitly
-     *                           for irregular plurals like "categories")
-     */
-    private function guessTableName(): string
-    {
-        // Remove 'Model' suffix if present
-        $class = (string) basename(str_replace('\\', '/', get_class($this)));
-        $class = (string) preg_replace('/Model$/', '', $class);
-
-        // PascalCase -> snake_case
-        $name = (string) preg_replace('/(?<!^)[A-Z]/', '_$0', $class);
-        $name = strtolower($name);
-
-        // Basic pluralization (just adds 's')
-        return $name.'s';
     }
 
     /**
