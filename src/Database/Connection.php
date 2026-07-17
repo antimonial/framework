@@ -35,9 +35,9 @@ class Connection
     private ?PDO $pdo = null;
 
     /**
-     * Connection configuration.
+     * Connection configuration (normalized in the constructor).
      *
-     * @var array<array-key, mixed>
+     * @var array{driver: string, host: string, port: int, database: string, username: string, password: string, charset: string}
      */
     private array $config;
 
@@ -72,20 +72,13 @@ class Connection
      */
     private function connect(): void
     {
-        /** @var string $driver */
-        $driver = is_string($this->config['driver'] ?? null) ? (string) $this->config['driver'] : 'mysql';
-        /** @var string $host */
-        $host = is_string($this->config['host'] ?? null) ? (string) $this->config['host'] : '127.0.0.1';
-        /** @var int $port */
-        $port = is_numeric($this->config['port'] ?? null) ? (int) $this->config['port'] : 3306;
-        /** @var string $database */
-        $database = is_string($this->config['database'] ?? null) ? (string) $this->config['database'] : '';
-        /** @var string $username */
-        $username = is_string($this->config['username'] ?? null) ? (string) $this->config['username'] : 'root';
-        /** @var string $password */
-        $password = is_string($this->config['password'] ?? null) ? (string) $this->config['password'] : '';
-        /** @var string $charset */
-        $charset = is_string($this->config['charset'] ?? null) ? (string) $this->config['charset'] : 'utf8mb4';
+        $driver = $this->config['driver'];
+        $host = $this->config['host'];
+        $port = $this->config['port'];
+        $database = $this->config['database'];
+        $username = $this->config['username'];
+        $password = $this->config['password'];
+        $charset = $this->config['charset'];
 
         $dsn = match ($driver) {
             'sqlite' => 'sqlite:'.($database !== '' ? $database : ':memory:'),

@@ -64,8 +64,7 @@ class Config
      */
     public static function get(string $key, mixed $default = null): mixed
     {
-        $parts = explode('.', $key, 2);
-        $file = $parts[0];
+        $file = (string) strtok($key, '.');
 
         if (isset(self::$misses[$file])) {
             return $default;
@@ -79,31 +78,12 @@ class Config
             return $default;
         }
 
-        if (count($parts) === 1) {
-            return self::$data[$file];
-        }
-
-        return self::dotGet((array) self::$data[$file], $parts[1], $default);
-    }
-
-    /**
-     * Retrieve a nested value from an array using dot notation.
-     *
-     * @param  array<array-key, mixed>  $array
-     * @param  string  $key  Remaining dot-notation path
-     * @param  mixed  $default  Default if key is not found
-     * @return mixed The nested value, or default
-     */
-    private static function dotGet(array $array, string $key, mixed $default): mixed
-    {
-        $keys = explode('.', $key);
-        $value = $array;
-
-        foreach ($keys as $k) {
-            if (! is_array($value) || ! array_key_exists($k, $value)) {
+        $value = self::$data[$file];
+        while (($segment = strtok('.')) !== false) {
+            if (! is_array($value) || ! array_key_exists($segment, $value)) {
                 return $default;
             }
-            $value = $value[$k];
+            $value = $value[$segment];
         }
 
         return $value;

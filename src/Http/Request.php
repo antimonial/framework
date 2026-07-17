@@ -430,11 +430,8 @@ class Request
         /** @var string $uri */
         $uri = $this->server['REQUEST_URI'] ?? '/';
 
-        // Strip query string
-        $pos = strpos($uri, '?');
-        if ($pos !== false) {
-            $uri = substr($uri, 0, $pos);
-        }
+        // Strip query string (parse_url keeps only the path component)
+        $uri = parse_url($uri, PHP_URL_PATH) ?: '/';
 
         // Strip base path if SCRIPT_NAME is set
         /** @var string $script */

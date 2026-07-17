@@ -150,7 +150,7 @@ final class Session
         }
 
         /** @var array<int, string> $key */
-        foreach ($key as $k => $v) {
+        foreach ($key as $k) {
             unset($_SESSION[$k]);
         }
     }

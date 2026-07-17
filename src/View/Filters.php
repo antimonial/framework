@@ -58,10 +58,7 @@ final class Filters
             }
 
             [$name, $arg] = array_pad(explode(':', $part, 2), 2, null);
-            if (! is_string($name)) {
-                $name = (string) $name;
-            }
-            $name = strtolower(trim($name));
+            $name = strtolower(trim((string) $name));
 
             if (! isset(self::$map[$name])) {
                 continue;

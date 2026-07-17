@@ -13,7 +13,6 @@ use Antimonial\Routing\Router;
 use Antimonial\Session\Session;
 use Antimonial\View\View;
 use Closure;
-use JsonException;
 use RuntimeException;
 use Throwable;
 
@@ -98,37 +97,49 @@ class App
                 fn (Request $req) => $this->dispatchController($handler, $req)
             );
         } catch (HttpNotFoundException $e) {
-            try {
-                $html = View::renderWithLayout('errors/404', 'layouts/main', []);
-                $response = (new Response)
-                    ->status(404)
-                    ->header('Content-Type', 'text/html; charset=UTF-8')
-                    ->body((string) $html);
-            } catch (RuntimeException) {
-                $response = (new Response)
-                    ->status(404)
-                    ->header('Content-Type', 'text/html; charset=UTF-8')
-                    ->body('<h1>404 Not Found</h1>');
-            }
+            $response = $this->notFoundResponse();
         } catch (ValidationException $e) {
-            $errors = $e->errors();
-
-            try {
-                $body = json_encode(['errors' => $errors], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-            } catch (JsonException $jsonException) {
-                $body = json_encode(['errors' => ['validation' => 'unencodable']]);
-                if ($body === false) {
-                    $body = '{"errors":{"validation":"unencodable"}}';
-                }
-            }
-
-            $response = (new Response)
-                ->status(422)
-                ->header('Content-Type', 'application/json; charset=UTF-8')
-                ->body($body);
+            $response = $this->validationErrorResponse($e->errors());
         }
 
         $response->send();
+    }
+
+    /**
+     * Build a 404 response, falling back to a plain message if the
+     * error view or layout cannot be rendered.
+     */
+    private function notFoundResponse(): Response
+    {
+        try {
+            $html = View::renderWithLayout('errors/404', 'layouts/main', []);
+            $body = (string) $html;
+        } catch (RuntimeException) {
+            $body = '<h1>404 Not Found</h1>';
+        }
+
+        return (new Response)
+            ->status(404)
+            ->header('Content-Type', 'text/html; charset=UTF-8')
+            ->body($body);
+    }
+
+    /**
+     * Build a 422 response carrying the validation errors as JSON.
+     */
+    /**
+     * Build a 422 response carrying the validation errors as JSON.
+     *
+     * @param  array<string, string[]>  $errors  Validation errors keyed by field
+     */
+    private function validationErrorResponse(array $errors): Response
+    {
+        $body = json_encode(['errors' => $errors], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+
+        return (new Response)
+            ->status(422)
+            ->header('Content-Type', 'application/json; charset=UTF-8')
+            ->body($body);
     }
 
     /**

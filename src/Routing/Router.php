@@ -211,13 +211,7 @@ class Router
 
         // Try exact match first (O(1) hash lookup)
         if (isset($this->routes[$method][$uri])) {
-            $route = $this->routes[$method][$uri];
-
-            return [
-                'handler' => $route->handler,
-                'middleware' => array_merge($this->globalMiddleware, $route->middleware),
-                'params' => [],
-            ];
+            return $this->matchResult($this->routes[$method][$uri], []);
         }
 
         // Try parameterized match
@@ -225,16 +219,27 @@ class Router
             foreach ($this->paramRoutes[$method] as $route) {
                 $params = $this->matchParameters($route->path, $uri);
                 if ($params !== false) {
-                    return [
-                        'handler' => $route->handler,
-                        'middleware' => array_merge($this->globalMiddleware, $route->middleware),
-                        'params' => $params,
-                    ];
+                    return $this->matchResult($route, $params);
                 }
             }
         }
 
         throw new HttpNotFoundException("No route for {$method} {$uri}");
+    }
+
+    /**
+     * Build the dispatch result for a matched route.
+     *
+     * @param  array<string, string>  $params  Extracted route parameters
+     * @return array{handler: Closure|array{0: class-string, 1: string}, middleware: class-string[], params: array<string, string>}
+     */
+    private function matchResult(Route $route, array $params): array
+    {
+        return [
+            'handler' => $route->handler,
+            'middleware' => array_merge($this->globalMiddleware, $route->middleware),
+            'params' => $params,
+        ];
     }
 
     // ─── Internal ────────────────────────────────────────────────
@@ -283,8 +288,10 @@ class Router
             return $path;
         }
 
-        $prefixes = array_map(fn ($g) => $g['prefix'], $this->groupStack);
-        $prefix = implode('', $prefixes);
+        $prefix = '';
+        foreach ($this->groupStack as $group) {
+            $prefix .= $group['prefix'];
+        }
 
         return '/'.trim($prefix, '/').'/'.ltrim($path, '/');
     }
@@ -311,15 +318,8 @@ class Router
         $regex = '#^'.$regex.'$#';
 
         if (preg_match($regex, $uri, $matches)) {
-            // Extract only named groups (skip numeric indices)
-            $params = [];
-            foreach ($matches as $key => $value) {
-                if (is_string($key)) {
-                    $params[$key] = $value;
-                }
-            }
-
-            return $params;
+            // Keep only named groups (skip numeric indices)
+            return array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
         }
 
         return false;

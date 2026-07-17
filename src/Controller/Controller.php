@@ -179,11 +179,11 @@ class Controller
                 ? 'The '.$field.' field must be a valid email address.'
                 : null,
 
-            'min' => ($value !== '' && ($isNum ? (float) $value < (float) $paramValue : strlen($value) < (int) $paramValue))
+            'min' => ($value !== '' && ! $this->passesLength($isNum, $value, $paramValue, false))
                 ? 'The '.$field.' field must be at least '.$paramStr.'.'
                 : null,
 
-            'max' => ($value !== '' && ($isNum ? (float) $value > (float) $paramValue : strlen($value) > (int) $paramValue))
+            'max' => ($value !== '' && ! $this->passesLength($isNum, $value, $paramValue, true))
                 ? 'The '.$field.' field must not exceed '.$paramStr.'.'
                 : null,
 
@@ -205,5 +205,25 @@ class Controller
 
             default => null,
         };
+    }
+
+    /**
+     * Check a min/max length-or-numeric rule.
+     *
+     * Numeric values are compared numerically; everything else is
+     * compared by string length.
+     *
+     * @param  bool  $isNum  Whether the value parses as a number
+     * @param  string  $value  The field value
+     * @param  string|null  $limit  The numeric/length limit from the rule
+     * @param  bool  $upper  true for max (greater-than), false for min (less-than)
+     */
+    private function passesLength(bool $isNum, string $value, ?string $limit, bool $upper): bool
+    {
+        $limit = (float) $limit;
+
+        return $isNum
+            ? ($upper ? (float) $value <= $limit : (float) $value >= $limit)
+            : ($upper ? strlen($value) <= (int) $limit : strlen($value) >= (int) $limit);
     }
 }

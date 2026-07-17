@@ -5,6 +5,24 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.1] - 2026-07-17
+
+### Changed
+
+- **Codebase simplification and idiom upgrade (no API or behavior changes).** Internal cleanup only; all 166 tests, PHPStan `--level=max`, and Pint continue to pass.
+  - `Response`: replaced `finfo_*` with native `mime_content_type()`; extracted `serveFile()` to deduplicate `download()`/`file()`; moved security headers to a `SECURITY_HEADERS` class constant.
+  - `Router`: `matchParameters()` now uses `array_filter(..., ARRAY_FILTER_USE_KEY)`; group prefix concatenation uses a plain loop; extracted `matchResult()` to remove duplicated dispatch arrays.
+  - `Request`: query-string stripping uses `parse_url(..., PHP_URL_PATH)`.
+  - `Config`: single-pass dot-notation lookup via `strtok()` (removed the redundant private `dotGet()` method).
+  - `QueryBuilder`: shared `ALLOWED_OPERATORS` constant for `join()`/`having()`.
+  - `Compiler`: shared `ESC` constant for HTML-escaping.
+  - `Connection`: config normalized once and typed as a shape, removing redundant re-casts in `connect()`.
+  - `Helpers::route()`: `strtr()` single-pass replacement instead of a `str_replace` loop.
+  - `Session::forget()`: dropped an unused loop variable.
+  - `Controller::applyRule()`: extracted `passesLength()` to remove duplicated min/max logic.
+  - `Filters`: removed a redundant `is_string` cast.
+  - `App::run()`: extracted `notFoundResponse()`/`validationErrorResponse()`; removed an unreachable JSON fallback.
+
 ## [0.11.0] - 2026-07-17
 
 ### Changed

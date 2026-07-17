@@ -26,6 +26,16 @@ use JsonException;
 class Response
 {
     /**
+     * Security headers applied automatically unless already set.
+     *
+     * @var array<string, string>
+     */
+    private const SECURITY_HEADERS = [
+        'X-Content-Type-Options' => 'nosniff',
+        'X-Frame-Options' => 'SAMEORIGIN',
+    ];
+
+    /**
      * @var int HTTP status code
      */
     private int $statusCode = 200;
@@ -150,17 +160,9 @@ class Response
      */
     public function download(string $path, ?string $name = null): static
     {
-        if (! file_exists($path) || ! is_readable($path)) {
-            throw new \RuntimeException("File not found or unreadable: {$path}");
-        }
-
         $name ??= basename($path);
-        $this->headers['Content-Type'] = $this->detectMimeType($path);
-        $this->headers['Content-Disposition'] = 'attachment; filename="'.addcslashes($name, '"\\').'"';
-        $this->headers['Content-Length'] = (string) filesize($path);
-        $this->body = $this->loadFile($path);
 
-        return $this;
+        return $this->serveFile($path, true, $name);
     }
 
     /**
@@ -174,12 +176,32 @@ class Response
      */
     public function file(string $path): static
     {
+        return $this->serveFile($path, false, null);
+    }
+
+    /**
+     * Serve a file as a response body, optionally forcing download.
+     *
+     * @param  string  $path  Absolute or relative path to the file
+     * @param  bool  $asAttachment  Add a Content-Disposition: attachment header
+     * @param  string|null  $name  Download filename (only used when attaching)
+     *
+     * @throws \RuntimeException If the file does not exist or is unreadable
+     */
+    private function serveFile(string $path, bool $asAttachment, ?string $name): static
+    {
         if (! file_exists($path) || ! is_readable($path)) {
             throw new \RuntimeException("File not found or unreadable: {$path}");
         }
 
         $this->headers['Content-Type'] = $this->detectMimeType($path);
         $this->headers['Content-Length'] = (string) filesize($path);
+
+        if ($asAttachment) {
+            /** @var string $name */
+            $this->headers['Content-Disposition'] = 'attachment; filename="'.addcslashes($name, '"\\').'"';
+        }
+
         $this->body = $this->loadFile($path);
 
         return $this;
@@ -209,16 +231,7 @@ class Response
      */
     private function detectMimeType(string $path): string
     {
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-
-        if ($finfo === false) {
-            return 'application/octet-stream';
-        }
-
-        $mime = finfo_file($finfo, $path);
-        finfo_close($finfo);
-
-        return $mime !== false ? $mime : 'application/octet-stream';
+        return mime_content_type($path) ?: 'application/octet-stream';
     }
 
     /**
@@ -277,7 +290,7 @@ class Response
 
         http_response_code($this->statusCode);
 
-        foreach (['X-Content-Type-Options' => 'nosniff', 'X-Frame-Options' => 'SAMEORIGIN'] as $name => $value) {
+        foreach (self::SECURITY_HEADERS as $name => $value) {
             if (! isset($this->headers[$name])) {
                 header("{$name}: {$value}");
             }

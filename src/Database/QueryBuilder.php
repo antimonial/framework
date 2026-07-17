@@ -122,6 +122,13 @@ class QueryBuilder
     private string $primaryKey = 'id';
 
     /**
+     * SQL comparison operators accepted by join() and having().
+     *
+     * @var list<string>
+     */
+    private const ALLOWED_OPERATORS = ['=', '!=', '<>', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE'];
+
+    /**
      * @param  Connection  $connection  Database connection
      * @param  string  $table  Table name
      */
@@ -417,8 +424,7 @@ class QueryBuilder
         $col1 = $this->assertIdentifier($col1);
         $col2 = $this->assertIdentifier($col2);
 
-        $allowedOps = ['=', '!=', '<>', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE'];
-        if (! in_array(strtoupper($op), $allowedOps, true)) {
+        if (! in_array(strtoupper($op), self::ALLOWED_OPERATORS, true)) {
             throw new InvalidArgumentException("Invalid JOIN operator: {$op}");
         }
 
@@ -467,8 +473,7 @@ class QueryBuilder
     {
         $column = $this->assertIdentifier($column);
 
-        $allowedOps = ['=', '!=', '<>', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE'];
-        if (! in_array(strtoupper($operator), $allowedOps, true)) {
+        if (! in_array(strtoupper($operator), self::ALLOWED_OPERATORS, true)) {
             throw new InvalidArgumentException("Invalid HAVING operator: {$operator}");
         }
 

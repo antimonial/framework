@@ -27,6 +27,11 @@ class Compiler
     public const VERSION = '0.9.2';
 
     /**
+     * HTML-escaping expression template (sprintf with the value to escape).
+     */
+    private const ESC = "htmlspecialchars(%s, ENT_QUOTES, 'UTF-8')";
+
+    /**
      * Compile a template file to a PHP file.
      *
      * @param  string  $source  Absolute path to the .php template
@@ -420,11 +425,11 @@ class Compiler
                 /** @var array<int, string> $m */
                 $expr = trim($m[1]);
                 if (! str_contains($expr, '|')) {
-                    return "<?= htmlspecialchars((string) ({$expr}), ENT_QUOTES, 'UTF-8') ?>";
+                    return '<?= '.sprintf(self::ESC, "(string) ({$expr})").' ?>';
                 }
                 [$var, $filters] = array_map('trim', explode('|', $expr, 2));
 
-                return "<?= htmlspecialchars((string) \\Antimonial\\View\\Filters::apply({$var}, ".var_export($filters, true)."), ENT_QUOTES, 'UTF-8') ?>";
+                return '<?= '.sprintf(self::ESC, "(string) \\Antimonial\\View\\Filters::apply({$var}, ".var_export($filters, true).')').' ?>';
             },
             $value
         ) ?? $value;

@@ -114,11 +114,12 @@ function route(string $name, array $params = []): string
 
     $url = Route::$namedRoutes[$name]->path;
 
+    $replacements = [];
     foreach ($params as $key => $value) {
-        $url = str_replace('{'.$key.'}', (string) $value, $url);
+        $replacements['{'.$key.'}'] = (string) $value;
     }
 
-    return $url;
+    return strtr($url, $replacements);
 }
 
 /**
