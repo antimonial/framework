@@ -84,6 +84,88 @@ return $this->view('users/index', $data, 'layouts/main');
 
 The layout receives `$content` with the inner view's output.
 
+### Template Engine
+
+Antimonial ships with a small built-in template engine (inspired by Blade/Twig
+but ~200 lines). It is auto-registered on first render — no setup required.
+Templates are plain `.php` files in `app/Views/` that compile to cached PHP.
+
+**Auto-escaping by default.** `{{ }}` escapes output (XSS-safe); `{{{ }}}`
+emits raw, trusted HTML.
+
+```php
+{{-- comment --}}
+
+{{ $name }}              {{-- escaped echo --}}
+{{ $name|upper }}        {{-- with filter --}}
+{{{ $html }}}            {{-- raw (trusted) echo --}}
+
+@if($count > 0)
+  <p>{{ $count }} items</p>
+@elseif($count === 1)
+  <p>One item</p>
+@else
+  <p>None</p>
+@endif
+
+@unless($active)
+  <p>Inactive</p>
+@endunless
+
+@foreach($users as $user)
+  <li>{{ $user['name'] }} ({{ $user['name']|length }} chars)</li>
+@endforeach
+
+@for($i = 0; $i < 10; $i++)
+  <span>{{ $i }}</span>
+@endfor
+
+@while($n > 0)
+  {{ $n-- }}
+@endwhile
+
+@set($total = count($users))   {{-- @set($var = expr) --}}
+@php echo time(); @endphp      {{-- raw PHP block --}}
+
+@include('partials/nav')        {{-- inherits parent variables --}}
+@include('item', ['id' => 1])   {{-- with explicit data --}}
+```
+
+**Layouts (inheritance):**
+
+```php
+{{-- users/index.php --}}
+@extends('layouts/main')
+
+@section('title')
+Users
+@endsection
+
+<h1>Users</h1>   {{-- becomes $content in the layout --}}
+```
+
+```php
+{{-- layouts/main.php --}}
+<html>
+<head><title>@yield('title', 'Default')</title></head>
+<body>
+  <main>{{{ $content }}}</main>   {{-- raw HTML from the child --}}
+</body>
+</html>
+```
+
+**Built-in filters:** `e`/`escape` (default for `{{ }}`), `raw`, `upper`,
+`lower`, `trim`, `length`, `json`, `date`. Add your own:
+
+```php
+use Antimonial\View\Filters;
+
+Filters::add('slug', fn ($v) => strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', $v))));
+```
+
+> The engine caches compiled templates in `app/storage/views/`. Force native
+> PHP rendering with `View::setEngine(null)`.
+
 ### Query Builder
 
 ```php
@@ -131,8 +213,10 @@ return [
 
 ## Security
 
-- **Escape output.** Views are plain PHP and are *not* auto-escaped. Always
-  escape user-facing data with the `e()` helper:
+- **Escape output.** The built-in template engine auto-escapes `{{ }}` echos
+  (XSS-safe) and only `{{{ }}}` emits raw, trusted HTML. When writing native
+  PHP views (or using `View::setEngine(null)`), output is *not* auto-escaped —
+  always escape user-facing data with the `e()` helper:
   ```php
   <?= e($user->name) ?>
   ```
@@ -177,7 +261,7 @@ framework/
 │   ├── Http/           # Request, Response
 │   ├── Routing/        # Router, Route
 │   ├── Controller/     # Base Controller with validation
-│   ├── View/           # PHP view renderer with layout support
+│   ├── View/           # View renderer + built-in template engine (Compiler, ViewEngine, Filters)
 │   ├── Middleware/     # MiddlewareInterface
 │   ├── Database/       # Connection, QueryBuilder, DB, Raw
 │   └── Model/          # Base Model with CRUD

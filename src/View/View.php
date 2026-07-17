@@ -13,14 +13,18 @@ use RuntimeException;
  * and including the file. Supports optional layouts where a view
  * is rendered first, then its content is injected into a layout.
  *
- * Views are plain PHP files in app/Views/. No template engine required.
+ * A built-in template engine (ViewEngine) ships with the framework and
+ * is auto-registered on first render. It compiles templates to cached
+ * PHP (Blade-style directives, auto-escaping, |filters, @extends/@section
+ * layouts, @include) — see ViewEngine, Compiler and Filters.
  *
- * The renderer also exposes an extension point: you can swap in
- * a custom engine (Blade, Twig, etc.) via setEngine() without
- * modifying any framework code.
+ * The renderer also exposes an extension point: call setEngine(null) to
+ * force native PHP rendering, or setEngine($custom) to swap in your own
+ * engine (must implement render(string, array): string).
  *
  * @see \Antimonial\Controller\Controller::view()
  * @see Helpers::view()
+ * @see ViewEngine
  */
 class View
 {
@@ -35,9 +39,20 @@ class View
      * When set, this engine is used instead of native PHP rendering.
      * The engine must implement a render(string $path, array $data): string method.
      *
+     * If left null, the built-in ViewEngine is auto-registered on first
+     * render (so the template engine ships with the framework). Set it to
+     * null explicitly to force native PHP rendering.
+     *
      * @var object|null
      */
     private static ?object $engine = null;
+
+    /**
+     * Whether the engine slot has been resolved (auto or explicit).
+     *
+     * @var bool
+     */
+    private static bool $engineResolved = false;
 
     /**
      * Set the base directory for view files.
@@ -66,7 +81,32 @@ class View
     }
 
     /**
+     * Resolve the rendering engine.
+     *
+     * Lazily registers the built-in ViewEngine on first use unless an
+     * engine (or explicit null) was already set via setEngine().
+     *
+     * @return object|null
+     */
+    private static function resolveEngine(): ?object
+    {
+        if (self::$engineResolved) {
+            return self::$engine;
+        }
+
+        self::$engineResolved = true;
+
+        if (self::$engine === null) {
+            self::$engine = new ViewEngine(self::getViewPath());
+        }
+
+        return self::$engine;
+    }
+
+    /**
      * Set a custom rendering engine.
+     *
+     * Pass null to force native PHP rendering (skips the built-in engine).
      *
      * @param object|null $engine Must implement render(string, array): string
      * @return void
@@ -74,6 +114,7 @@ class View
     public static function setEngine(?object $engine): void
     {
         self::$engine = $engine;
+        self::$engineResolved = true;
     }
 
     /**
@@ -90,8 +131,10 @@ class View
      */
     public static function render(string $path, array $data = [], ?array &$capturedVars = null): string
     {
-        if (self::$engine !== null) {
-            return self::$engine->render($path, $data);
+        $engine = self::resolveEngine();
+
+        if ($engine !== null) {
+            return $engine->render($path, $data);
         }
 
         $file = self::resolve($path);
