@@ -2,6 +2,15 @@
 
 All notable changes to the Antimonial framework are documented here.
 
+## [0.8.1] - 2026-07-17
+
+### Fixed
+- `validate()` now returns only the fields that have validation rules, instead of the entire request input
+
+### Added
+- `QueryBuilder::paginate(int $perPage, int $page)` — returns `{items, total, perPage, currentPage, totalPages}` using `clone` to avoid builder state loss
+- Named routes with `->name('name')` fluent method and global `route()` helper for reverse URL generation
+
 ## [0.8.0] - 2026-07-17
 
 ### Added
