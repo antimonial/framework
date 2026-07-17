@@ -59,7 +59,7 @@ class HomeController extends Controller
 | **Routing** | GET/POST/PUT/PATCH/DELETE, params, groups, named routes, middleware |
 | **Controllers** | View rendering, JSON responses, redirects, validation (8 rules) |
 | **Query Builder** | Fluent SQL builder — select, where (all variants), join, aggregates, paginate, insert/update/delete, transactions |
-| **Model** | Base model with CRUD, timestamps, table name guessing, static syntax (`User::find(42)`) |
+| **Model** | Base model with CRUD, timestamps, table name guessing |
 | **Response** | HTML, JSON, redirects, cookies, file downloads (`download()`, `file()`) |
 | **Template Engine** | Blade-style directives, layouts (`@extends`/`@section`/`@yield`), pipe filters, auto-escaping, compiled cache |
 | **Session** | Native PHP session wrapper with flash data (opt-in) |

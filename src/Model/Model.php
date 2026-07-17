@@ -27,16 +27,9 @@ use PDOException;
  *       protected bool $timestamps = true;
  *   }
  *
- *   User::find(42);
- *   User::where('active', true)->orderBy('name')->get();
- *
- * @method static ?object find(mixed $id)
- * @method static object[] all()
- * @method static QueryBuilder where(string $column, mixed $operatorOrValue, mixed $value = null)
- * @method static QueryBuilder query()
- * @method static string insert(array<string, mixed> $data)
- * @method static int update(mixed $id, array<string, mixed> $data)
- * @method static int delete(mixed $id)
+ *   $user = new User();
+ *   $user->find(42);
+ *   $user->where('active', true)->query()->orderBy('name')->get();
  *
  * @see QueryBuilder
  * @see DB
@@ -79,19 +72,6 @@ class Model
     }
 
     /**
-     * Delegate static calls to instance methods.
-     *
-     * Enables the expressive static syntax: User::find(42), User::where(...), etc.
-     *
-     * @param  array<mixed>  $arguments
-     */
-    public static function __callStatic(string $method, array $arguments): mixed
-    {
-        /** @phpstan-ignore new.static (constructor has no required params — safe for subclassing) */
-        return (new static)->$method(...$arguments);
-    }
-
-    /**
      * Get a QueryBuilder scoped to this model's table.
      *
      * This is the main entry point for custom queries.
@@ -108,7 +88,7 @@ class Model
     /**
      * Find a row by its primary key.
      *
-     * @example User::find(42);
+     * @example $user = (new User())->find(42);
      *
      * @throws PDOException If the query fails
      *
@@ -146,7 +126,7 @@ class Model
     /**
      * Insert a row and return the last inserted ID.
      *
-     * @example User::insert(['name' => 'John', 'email' => 'john@...']);
+     * @example $id = (new User())->insert(['name' => 'John', 'email' => 'john@...']);
      *
      * @param  array<string, mixed>  $data
      * @return string Last inserted ID
@@ -167,7 +147,7 @@ class Model
     /**
      * Update a row by its primary key.
      *
-     * Example: User::update(42, ['name' => 'Jane']);
+     * Example: (new User())->update(42, ['name' => 'Jane']);
      *
      * @param  array<string, mixed>  $data
      * @return int Affected row count
@@ -190,7 +170,7 @@ class Model
     /**
      * Delete a row by its primary key.
      *
-     * Example: User::delete(42);
+     * Example: (new User())->delete(42);
      *
      * @return int Affected row count
      *
