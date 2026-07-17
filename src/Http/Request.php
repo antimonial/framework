@@ -17,14 +17,14 @@ use Antimonial\Routing\Router;
  * between middleware and controllers (e.g. route parameters, the
  * authenticated user, etc.).
  *
-     * @example $request = Request::fromGlobals();
-     *
-     * @phpstan-consistent-constructor
-     *
-     * @see Response
-     * @see Router::dispatch()
-     */
-    class Request
+ * @example $request = Request::fromGlobals();
+ *
+ * @phpstan-consistent-constructor
+ *
+ * @see Response
+ * @see Router::dispatch()
+ */
+class Request
 {
     /**
      * @var array<string, mixed> Query string parameters ($_GET)

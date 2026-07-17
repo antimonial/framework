@@ -147,6 +147,7 @@ class Compiler
             '/@elseif'.$this->exprPattern().'/' => function (array $m): string {
                 /** @var array<int, string> $m */
                 $cond = $m[1] ?? '';
+
                 return "<?php elseif{$cond}: ?>";
             },
             '/@else\b(?!if)/' => fn () => '<?php else: ?>',
@@ -193,11 +194,13 @@ class Compiler
             '/@include'.$this->exprPattern().'/' => function (array $m): string {
                 /** @var array<int, string> $m */
                 $arg = $m[1] ?? '';
+
                 return "<?php echo \$__engine->include{$arg}; ?>";
             },
             '/@yield'.$this->exprPattern().'/' => function (array $m): string {
                 /** @var array<int, string> $m */
                 $arg = $m[1] ?? '';
+
                 return "<?php echo \$__engine->yield{$arg}; ?>";
             },
             '/@parent\b'.$this->exprPattern().'/' => fn (): string => '<?php echo $__engine->parent(); ?>',
