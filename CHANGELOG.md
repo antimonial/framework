@@ -185,5 +185,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial stable milestone: a minimal, expressive PHP MVC framework for server-rendered apps (no JS by default, PHP >= 8.1)
+- Initial stable milestone: a PHP MVC framework where what you read is what runs (PHP >= 8.1)
 - Core (`App`/`Config`/`DotEnv`/`ErrorHandler`/helpers), HTTP (`Request`/`Response`), Routing, Database (`Connection`/`QueryBuilder`/`DB`/`Raw`), MVC (`Controller`/`Model`) and middleware support

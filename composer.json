@@ -1,6 +1,6 @@
 {
     "name": "antimonial/framework",
-    "description": "A minimal, expressive PHP framework. No magic, no JS, no coupled services.",
+    "description": "A PHP MVC framework where what you read is what runs.",
     "type": "framework",
     "license": "MIT",
     "keywords": ["php", "framework", "mvc", "query-builder", "minimal"],

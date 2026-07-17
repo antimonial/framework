@@ -1,6 +1,6 @@
 # Antimonial
 
-A minimal, expressive PHP framework for server-rendered apps. No magic, no JS, no coupled services.
+A PHP MVC framework where what you read is what runs.
 
 ## Requirements
 

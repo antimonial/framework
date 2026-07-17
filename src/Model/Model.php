@@ -15,10 +15,10 @@ use PDOException;
  * A thin CRUD wrapper around QueryBuilder. Models map to database
  * tables and provide convenience methods for common operations.
  *
- * This is intentionally NOT an ORM. There are no magic relations,
- * no attribute casting, no change tracking. You see exactly what
- * queries run, and you can always drop down to the QueryBuilder
- * for complex queries.
+ * This is intentionally NOT an ORM. Relations are not inferred,
+ * there is no attribute casting and no change tracking. You see
+ * exactly what queries run, and you can always drop down to the
+ * QueryBuilder for complex queries.
  *
  * @example
  *   class User extends Model

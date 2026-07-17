@@ -9,10 +9,10 @@ use Antimonial\Security\Csrf;
 /**
  * Minimal server-side session, built on PHP's native $_SESSION.
  *
- * Inspired by the ergonomics of Laravel/Symfony sessions but following
- * Antimonial's "no magic, no coupled services" rule: there is no custom
- * storage backend, no serializer, no flash bags — just a thin, replaceable
- * wrapper over $_SESSION plus a tiny flash layer.
+ * Inspired by the ergonomics of Laravel/Symfony sessions but staying
+ * explicit: there is no custom storage backend, no serializer, no flash
+ * bags — just a thin, replaceable wrapper over $_SESSION plus a tiny
+ * flash layer.
  *
  * Start it once (e.g. from App::run or a bootstrap file) and read/write
  * anywhere via the static API.

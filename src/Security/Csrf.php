@@ -15,8 +15,8 @@ use Antimonial\Session\Session;
  * {@code @csrf} view directive or Csrf::field()) and state-changing requests
  * (POST/PUT/DELETE/PATCH) must verify it. Comparison is timing-safe.
  *
- * No dependencies, no coupled service: the session is the only store, and
- * it plugs into whatever session the app already uses.
+ * The session is the only store, and it plugs into whatever session the
+ * app already uses — no separate service to wire up.
  *
  * @see CsrfMiddleware
  * @see Session
