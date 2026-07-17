@@ -5,6 +5,17 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-07-17
+
+### Changed
+
+- **`Model` no longer guesses the table name.** Removed `Model::guessTableName()`. A model without a declared `protected string $table` now throws `RuntimeException` at construction. You must declare the table explicitly — the framework does not infer it from the class name (which also avoided wrong pluralization like `Category` → `categorys`).
+- `Model` docblock corrected: it now states plainly that table names are never inferred.
+
+### BREAKING CHANGE
+
+- Every model must declare a `protected string $table` property. Models that relied on auto-detection need a `$table` declaration (e.g. `protected string $table = 'users';`).
+
 ## [0.9.4] - 2026-07-17
 
 ### Fixed
