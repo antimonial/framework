@@ -22,20 +22,10 @@ use RuntimeException;
  */
 class ViewEngine
 {
-    /**
-     * @var string Base directory for .php template files
-     */
     private string $viewPath;
 
-    /**
-     * @var string Directory for compiled PHP cache
-     */
     private string $cachePath;
 
-    /**
-     * @param  string  $viewPath  Absolute path to the Views directory
-     * @param  string  $cachePath  Absolute path for compiled PHP (default: viewPath/../storage/views)
-     */
     public function __construct(string $viewPath, ?string $cachePath = null)
     {
         $this->viewPath = rtrim($viewPath, '/');
@@ -57,42 +47,40 @@ class ViewEngine
         $compiled = $this->compiledPath($source);
         if ($this->isExpired($source, $compiled)) {
             (new Compiler)->compile($source, $compiled);
+
+            if (function_exists('opcache_invalidate')) {
+                opcache_invalidate($compiled, true);
+            }
         }
 
         return $this->evaluate($compiled, $data);
     }
 
-    /**
-     * Whether the most recent evaluate() was for a child template that
-     * extends a layout (its output is the rendered layout, not free HTML).
-     */
+    // ─── Runtime state (stack-based to support nesting) ─────────
+
+    /** @var array<int, array{extendingChild: bool, extendLayout: ?string, parentData: array}> */
+    private array $evalStack = [];
+
     private bool $extendingChild = false;
 
-    /**
-     * Layout path set via @extends, pending render at the end of evaluate().
-     */
     private ?string $extendLayout = null;
+
+    /** @var array<string, mixed> */
+    private array $parentData = [];
+
+    /** @var array<string, string> */
+    private array $sections = [];
+
+    private ?string $activeSection = null;
 
     // ─── Runtime helpers (called from compiled PHP) ────────────
 
-    /**
-     * Extends a layout; renders it with this template's sections and the
-     * child's free content (everything outside @section) as $content.
-     *
-     * Called from the footer of a compiled child template, after the child
-     * body has been evaluated (so free content and sections are captured).
-     *
-     * @param  string  $layout  Layout path relative to viewPath
-     * @return string
-     */
     /**
      * Mark this template as extending a layout.
      *
      * Called from the footer of a compiled child template. evaluate() reads
      * this flag once the child body (free content + @section blocks) has
      * been captured, and renders the layout with that content.
-     *
-     * @param  string  $layout  Layout path relative to viewPath
      */
     public function beginExtend(string $layout): void
     {
@@ -156,21 +144,6 @@ class ViewEngine
     // ─── Internals ─────────────────────────────────────────────
 
     /**
-     * @var array<string, string> Captured sections for the current render
-     */
-    private array $sections = [];
-
-    /**
-     * @var string|null Name of the section currently being captured
-     */
-    private ?string $activeSection = null;
-
-    /**
-     * @var array<string, mixed> Data passed down to the extended layout
-     */
-    private array $parentData = [];
-
-    /**
      * Resolve a template path to an absolute, safe file path.
      *
      * @throws RuntimeException
@@ -194,11 +167,14 @@ class ViewEngine
     }
 
     /**
-     * Compute the compiled cache file path (hash of source path).
+     * Compute the compiled cache file path.
+     *
+     * Includes a compiler version component so that upgrading the framework
+     * automatically invalidates all cached views.
      */
     private function compiledPath(string $source): string
     {
-        return $this->cachePath.'/'.hash('xxh128', $source).'.php';
+        return $this->cachePath.'/'.hash('xxh128', $source.'|v'.Compiler::VERSION).'.php';
     }
 
     /**
@@ -216,35 +192,69 @@ class ViewEngine
     /**
      * Evaluate compiled PHP with extracted data.
      *
+     * Uses a state stack so nested evaluate() calls (e.g. via @include from
+     * inside a @section) do NOT clobber the parent's extending/layout state.
+     *
      * @param  array<string, mixed>  $data
      */
     private function evaluate(string $compiled, array $data): string
     {
-        $this->parentData = $data;
         $__engine = $this;
+
+        // Push current state onto the stack before resetting for this eval
+        $this->evalStack[] = [
+            'extendingChild' => $this->extendingChild,
+            'extendLayout'   => $this->extendLayout,
+            'parentData'     => $this->parentData,
+        ];
+
+        $this->parentData = $data;
+        $this->extendingChild = false;
+        $this->extendLayout = null;
         extract($data, EXTR_SKIP);
 
         ob_start();
         include $compiled;
         $output = ob_get_clean() ?: '';
 
-        // A child template that extends a layout: its free content (text
-        // outside @section, already isolated because sections captured
-        // their own buffers) becomes $content of the layout.
         if ($this->extendingChild && $this->extendLayout !== null) {
             $content = $output;
             $layout = $this->extendLayout;
+
+            // This IS the child that triggered @extends — render the layout.
+            // Do NOT pop the stack (the layout rendering continues within
+            // this call).
             $this->extendLayout = null;
             $this->extendingChild = false;
 
-            return $this->render(
+            // Push a dummy slot so the ancestor is restored when the
+            // layout evaluate() pops.
+            $this->evalStack[] = [
+                'extendingChild' => false,
+                'extendLayout'   => null,
+                'parentData'     => $data,
+            ];
+
+            $result = $this->render(
                 $layout,
                 array_merge($data, ['content' => $content])
             );
+
+            // Pop the dummy + the ancestor state
+            array_pop($this->evalStack);
+            $prev = array_pop($this->evalStack);
+            $this->extendingChild = $prev['extendingChild'];
+            $this->extendLayout = $prev['extendLayout'];
+            $this->parentData = $prev['parentData'];
+
+            return $result;
         }
 
-        $this->extendLayout = null;
-        $this->extendingChild = false;
+        // Pop — restore the parent template's state
+        $prev = array_pop($this->evalStack);
+        $this->extendingChild = $prev['extendingChild'];
+        $this->extendLayout = $prev['extendLayout'];
+        $this->parentData = $prev['parentData'];
 
         return $output;
     }

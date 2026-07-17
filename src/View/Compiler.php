@@ -20,6 +20,12 @@ use RuntimeException;
 class Compiler
 {
     /**
+     * Compiler version — bump this whenever the compilation logic changes
+     * to force recompilation of all cached views.
+     */
+    public const VERSION = '0.8.0';
+
+    /**
      * Compile a template file to a PHP file.
      *
      * @param  string  $source  Absolute path to the .php template
@@ -41,7 +47,23 @@ class Compiler
             mkdir($dir, 0775, true);
         }
 
-        file_put_contents($target, $php);
+        // Atomic write: temp file + rename prevents partial reads
+        $tmp = tempnam($dir, 'cmp_');
+        if ($tmp === false) {
+            throw new RuntimeException("Cannot create temp file in {$dir}");
+        }
+
+        file_put_contents($tmp, $php);
+
+        if (! rename($tmp, $target)) {
+            @unlink($tmp);
+
+            throw new RuntimeException("Cannot write compiled view: {$target}");
+        }
+
+        if (function_exists('opcache_invalidate')) {
+            opcache_invalidate($target, true);
+        }
     }
 
     /**
@@ -105,6 +127,10 @@ class Compiler
         $inlinePattern = '/@(include|yield|parent|set)\b'.$this->exprPattern().'/';
 
         // @csrf: standalone directive (no parentheses), emits a hidden field.
+        $casePattern = '/@case'.$this->exprPattern().'/';
+        $defaultPattern = '/@default\b/';
+        $breakPattern = '/@break\b/';
+
         $csrfPattern = '/@csrf\b/';
 
         // @php ... @endphp: raw PHP block (no parentheses around the body).
@@ -154,6 +180,24 @@ class Compiler
                 function ($m) {
                     return $this->compileDirective($m[1], $m[2], '', false);
                 },
+                $value
+            ) ?? $value;
+
+            $value = preg_replace_callback(
+                $casePattern,
+                fn ($m) => '<?php case '.substr($m[1], 1, -1).": ?>\n",
+                $value
+            ) ?? $value;
+
+            $value = preg_replace_callback(
+                $defaultPattern,
+                fn () => "<?php default: ?>\n",
+                $value
+            ) ?? $value;
+
+            $value = preg_replace_callback(
+                $breakPattern,
+                fn () => "<?php break; ?>\n",
                 $value
             ) ?? $value;
 
