@@ -2,7 +2,6 @@ parameters:
     level: max
     paths:
         - src
-    scanFiles:
+    bootstrapFiles:
         - tests/_stubs/constants.php
-    excludePaths:
-        - src/Core/Helpers.php
+

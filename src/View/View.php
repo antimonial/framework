@@ -71,11 +71,11 @@ class View
      *
      * @param  string  $path  View path relative to the view directory
      * @param  array<string, mixed>  $data  Variables extracted into the view
-     * @param  array<string, mixed>|null  $capturedVars  Section variables captured during rendering
+     * @param  array<string, mixed>  $capturedVars  Section variables captured during rendering
      *
      * @throws RuntimeException If the template is missing
      */
-    public static function render(string $path, array $data = [], ?array &$capturedVars = null): string
+    public static function render(string $path, array $data = [], array &$capturedVars = []): string
     {
         return self::engine()->render($path, $data);
     }

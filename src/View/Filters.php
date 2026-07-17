@@ -84,8 +84,12 @@ final class Filters
      */
     public static function escape(mixed $value): string
     {
-        /** @phpstan-ignore-next-line cast.string (intentional: escape any value to string) */
-        $str = is_string($value) ? $value : (string) $value;
+        $str = match (true) {
+            is_string($value) => $value,
+            is_int($value), is_float($value), is_bool($value) => (string) $value,
+            $value === null => '',
+            default => '',
+        };
 
         return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
     }
@@ -95,8 +99,12 @@ final class Filters
      */
     public static function raw(mixed $value): string
     {
-        /** @phpstan-ignore-next-line cast.string (intentional: coalesce any value to string) */
-        return is_string($value) ? $value : (string) $value;
+        return match (true) {
+            is_string($value) => $value,
+            is_int($value), is_float($value), is_bool($value) => (string) $value,
+            $value === null => '',
+            default => '',
+        };
     }
 
     /**

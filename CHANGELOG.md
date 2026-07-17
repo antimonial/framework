@@ -2,6 +2,19 @@
 
 All notable changes to the Antimonial framework are documented here.
 
+## [0.9.3] - 2026-07-17
+
+### Changed
+- **PHPStan analysis now passes at `--level=max` with zero `@phpstan-ignore` comments** — all 25 errors and 4 ignores eliminated through proper type fixes:
+  - `Request` constructor changed from `private` to `protected` + `@phpstan-consistent-constructor` annotation so `new static()` in `fromGlobals()` is type-safe
+  - `Filters::escape()`/`raw()` rewritten with `match` narrowing instead of `(string)` casts
+  - `Compiler` directive callbacks: closures now typed `(array $m): string` with `@var array<int, string> $m` so capture-group access is `string`-safe (11 errors)
+  - `View::render()` signature changed `array<string, mixed>|null $capturedVars` → `array<string, mixed> $capturedVars = []` (matches native type)
+  - `ViewEngine` `evaluate()` state-restoration logic refactored: `array_pop` results routed through `popEvalState(): ?array` helper to avoid null/always-false false positives
+  - `App::loadRoutes()` `require` path resolved via `ROOT_PATH` stub constant (no more `require.fileNotFound`)
+- **phpstan.neon** — `scanFiles` replaced with `bootstrapFiles` so `ROOT_PATH` stub constant is actually defined during analysis
+- **Tests** — added `tests/_stubs/constants.php` (defines `ROOT_PATH`) and `tests/_stubs/app/Routes/web.php` (stub routes file for static analysis)
+
 ## [0.9.2] - 2026-07-17
 
 ### Added

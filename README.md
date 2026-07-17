@@ -76,6 +76,16 @@ class HomeController extends Controller
 - CSRF protection with timing-safe `hash_equals()` comparison (opt-in)
 - Security headers (`X-Content-Type-Options`, `X-Frame-Options`) sent by default
 
+## Quality & Static Analysis
+
+The framework is analyzed with **PHPStan at `--level=max`** with **zero `@phpstan-ignore` comments** — all types are resolved through proper fixes (typed closures, `match` narrowing, `@phpstan-consistent-constructor` contracts), not suppression.
+
+```bash
+vendor/bin/phpstan analyse --level=max src/
+```
+
+The `phpstan.neon` uses a `bootstrapFiles` stub (`tests/_stubs/constants.php`) that defines `ROOT_PATH` for analysis, since the constant is set by the front controller at runtime.
+
 ## Documentation
 
 Full documentation is available on the [Wiki](https://github.com/antimonial/framework/wiki).

@@ -143,7 +143,6 @@ class App
 
         if (file_exists($routesFile)) {
             $router = $this->router;
-            /** @phpstan-ignore-next-line Path depends on runtime ROOT_PATH */
             require $routesFile;
         }
     }

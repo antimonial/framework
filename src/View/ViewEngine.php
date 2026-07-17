@@ -62,7 +62,7 @@ class ViewEngine
 
     // ─── Runtime state (stack-based to support nesting) ─────────
 
-    /** @var array<int, array{extendingChild: bool, extendLayout: ?string, parentData: array}> */
+    /** @var array<int, array{extendingChild: bool, extendLayout: ?string, parentData: array<string, mixed>}> */
     private array $evalStack = [];
 
     private bool $extendingChild = false;
@@ -162,6 +162,16 @@ class ViewEngine
     // ─── Internals ─────────────────────────────────────────────
 
     /**
+     * Pop the most recent eval state from the stack.
+     *
+     * @return array{extendingChild: bool, extendLayout: ?string, parentData: array<string, mixed>}|null
+     */
+    private function popEvalState(): ?array
+    {
+        return array_pop($this->evalStack);
+    }
+
+    /**
      * Resolve a template path to an absolute, safe file path.
      *
      * Guards against directory traversal by verifying the resolved path
@@ -240,23 +250,23 @@ class ViewEngine
         ];
 
         $this->parentData = $data;
-        $this->extendingChild = false;
-        $this->extendLayout = null;
         extract($data, EXTR_SKIP);
 
         ob_start();
         include $compiled;
         $output = ob_get_clean() ?: '';
 
-        if ($this->extendingChild && $this->extendLayout !== null) {
-            $content = $output;
-            $layout = $this->extendLayout;
+        // Capture post-render state: a child template's @extends call (made
+        // during include above) sets these on the engine instance.
+        $isExtending = $this->extendingChild;
+        $layoutName = $this->extendLayout;
 
-            // This IS the child that triggered @extends — render the layout.
-            // Do NOT pop the stack (the layout rendering continues within
-            // this call).
-            $this->extendLayout = null;
-            $this->extendingChild = false;
+        // Reset for this eval frame.
+        $this->extendingChild = false;
+        $this->extendLayout = null;
+
+        if ($isExtending && $layoutName !== null) {
+            $content = $output;
 
             // Push a dummy slot so the ancestor is restored when the
             // layout evaluate() pops.
@@ -267,13 +277,17 @@ class ViewEngine
             ];
 
             $result = $this->render(
-                $layout,
+                $layoutName,
                 array_merge($data, ['content' => $content])
             );
 
             // Pop the dummy + the ancestor state
             array_pop($this->evalStack);
-            $prev = array_pop($this->evalStack);
+            $prev = $this->popEvalState();
+            if ($prev === null) {
+                return $result;
+            }
+
             $this->extendingChild = $prev['extendingChild'];
             $this->extendLayout = $prev['extendLayout'];
             $this->parentData = $prev['parentData'];
@@ -282,7 +296,11 @@ class ViewEngine
         }
 
         // Pop — restore the parent template's state
-        $prev = array_pop($this->evalStack);
+        $prev = $this->popEvalState();
+        if ($prev === null) {
+            return $output;
+        }
+
         $this->extendingChild = $prev['extendingChild'];
         $this->extendLayout = $prev['extendLayout'];
         $this->parentData = $prev['parentData'];

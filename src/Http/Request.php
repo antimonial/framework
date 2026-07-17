@@ -17,12 +17,14 @@ use Antimonial\Routing\Router;
  * between middleware and controllers (e.g. route parameters, the
  * authenticated user, etc.).
  *
- * @example $request = Request::fromGlobals();
- *
- * @see Response
- * @see Router::dispatch()
- */
-class Request
+     * @example $request = Request::fromGlobals();
+     *
+     * @phpstan-consistent-constructor
+     *
+     * @see Response
+     * @see Router::dispatch()
+     */
+    class Request
 {
     /**
      * @var array<string, mixed> Query string parameters ($_GET)
@@ -74,7 +76,7 @@ class Request
     private ?array $jsonBody = null;
 
     /**
-     * Private constructor — use fromGlobals() factory.
+     * Protected constructor — use fromGlobals() factory.
      *
      * @param  array<string, mixed>  $get
      * @param  array<string, mixed>  $post
@@ -82,7 +84,7 @@ class Request
      * @param  array<string, mixed>  $cookies
      * @param  array<string, array{name: string, type: string, tmp_name: string, error: int, size: int}>  $files
      */
-    private function __construct(
+    protected function __construct(
         array $get,
         array $post,
         array $server,
@@ -105,14 +107,18 @@ class Request
      */
     public static function fromGlobals(): static
     {
-        /** @phpstan-ignore-next-line unsafe usage of new static() is acceptable in a request factory */
-        return new static(
-            $_GET,
-            self::parseInput(),
-            $_SERVER,
-            $_COOKIE,
-            $_FILES,
-        );
+        /** @var array<string, mixed> $get */
+        $get = $_GET;
+        /** @var array<string, mixed> $post */
+        $post = self::parseInput();
+        /** @var array<string, mixed> $server */
+        $server = $_SERVER;
+        /** @var array<string, mixed> $cookies */
+        $cookies = $_COOKIE;
+        /** @var array<string, array{name: string, type: string, tmp_name: string, error: int, size: int}> $files */
+        $files = $_FILES;
+
+        return new static($get, $post, $server, $cookies, $files);
     }
 
     /**

@@ -113,6 +113,7 @@ class Compiler
         $html = preg_replace_callback(
             '/^[ \t]*@extends'.$this->exprPattern().'/m',
             function ($m) use (&$footer) {
+                /** @var array<int, string> $m */
                 $footer .= "<?php \$__engine->beginExtend({$m[1]}); ?>\n";
 
                 return '';
@@ -125,7 +126,10 @@ class Compiler
             $prev = $html;
             $html = preg_replace_callback(
                 '/@php\b([\s\S]*?)@endphp/s',
-                fn ($m) => '<?php '.trim($m[1]).' ?>',
+                function ($m) {
+                    /** @var array<int, string> $m */
+                    return '<?php '.trim($m[1]).' ?>';
+                },
                 $html
             ) ?? $html;
         } while ($html !== $prev);
@@ -136,15 +140,21 @@ class Compiler
         // Order matters: longer matches first (e.g. @elseif before @else).
         $atomic = [
             // Openers (paired — emit opening PHP + record on stack for @end)
-            '/@(if|unless|foreach|for|while|switch|isset|empty|section)\b'.$this->exprPattern().'/' => function ($m) {
-                return $this->openBlock($m[1], $m[2]);
+            '/@(if|unless|foreach|for|while|switch|isset|empty|section)\b'.$this->exprPattern().'/' => function (array $m): string {
+                /** @var array<int, string> $m */
+                return $this->openBlock($m[1] ?? '', $m[2] ?? '');
             },
-            '/@elseif'.$this->exprPattern().'/' => fn ($m) => "<?php elseif{$m[1]}: ?>",
+            '/@elseif'.$this->exprPattern().'/' => function (array $m): string {
+                /** @var array<int, string> $m */
+                $cond = $m[1] ?? '';
+                return "<?php elseif{$cond}: ?>";
+            },
             '/@else\b(?!if)/' => fn () => '<?php else: ?>',
             // Switch case/default — MUST be before closers so @case/@default
             // run before @endswitch pops the switchStack.
-            '/@case'.$this->exprPattern().'/' => function ($m) {
-                $val = substr($m[1], 1, -1);
+            '/@case'.$this->exprPattern().'/' => function (array $m): string {
+                /** @var array<int, string> $m */
+                $val = substr($m[1] ?? '', 1, -1);
                 if (! empty($this->switchStack)) {
                     $idx = array_key_last($this->switchStack);
                     $sw = $this->switchStack[$idx];
@@ -160,8 +170,9 @@ class Compiler
             '/@break\b/' => fn () => "<?php break; ?>\n",
             // Atomic closers — explicit named closer first, then @end as universal.
             // These run AFTER @case/@default so the switchStack is still populated.
-            '/@(endif|endunless|endisset|endempty|endforeach|endfor|endwhile|endswitch|endsection)\b/' => function ($m) {
-                return $this->closeBlock($m[1]);
+            '/@(endif|endunless|endisset|endempty|endforeach|endfor|endwhile|endswitch|endsection)\b/' => function (array $m): string {
+                /** @var array<int, string> $m */
+                return $this->closeBlock($m[1] ?? '');
             },
             // Universal closer: @end closes whatever block was most recently opened
             '/@end\b(?!if|unless|isset|empty|foreach|for|while|switch|section)/' => function () {
@@ -179,10 +190,21 @@ class Compiler
                 return $php;
             },
             // Inline helpers
-            '/@include'.$this->exprPattern().'/' => fn ($m) => "<?php echo \$__engine->include{$m[1]}; ?>",
-            '/@yield'.$this->exprPattern().'/' => fn ($m) => "<?php echo \$__engine->yield{$m[1]}; ?>",
-            '/@parent\b'.$this->exprPattern().'/' => fn () => '<?php echo $__engine->parent(); ?>',
-            '/@set'.$this->exprPattern().'/' => fn ($m) => $this->compileSet($m[1]),
+            '/@include'.$this->exprPattern().'/' => function (array $m): string {
+                /** @var array<int, string> $m */
+                $arg = $m[1] ?? '';
+                return "<?php echo \$__engine->include{$arg}; ?>";
+            },
+            '/@yield'.$this->exprPattern().'/' => function (array $m): string {
+                /** @var array<int, string> $m */
+                $arg = $m[1] ?? '';
+                return "<?php echo \$__engine->yield{$arg}; ?>";
+            },
+            '/@parent\b'.$this->exprPattern().'/' => fn (): string => '<?php echo $__engine->parent(); ?>',
+            '/@set'.$this->exprPattern().'/' => function (array $m): string {
+                /** @var array<int, string> $m */
+                return $this->compileSet($m[1] ?? '');
+            },
             '/@csrf\b/' => fn () => '<?php echo \\Antimonial\\Security\\Csrf::field(); ?>',
         ];
 
@@ -336,6 +358,7 @@ class Compiler
         return preg_replace_callback(
             '/(\$[a-zA-Z_]\w*)((?:\|\w+(?::(?:[^()|]+|(?-1))*)?)+)/',
             function ($m) {
+                /** @var array<int, string> $m */
                 $var = $m[1];
                 $filters = [];
                 preg_match_all('/\|(\w+)(?::((?:[^()|]+|(?-1))*))?/', $m[2], $matches, PREG_SET_ORDER);
@@ -380,7 +403,10 @@ class Compiler
         // Raw: {{{ $html }}}
         $value = preg_replace_callback(
             '/{{{\s*(.+?)\s*}}}/s',
-            fn ($m) => "<?= {$m[1]} ?>",
+            function ($m) {
+                /** @var array<int, string> $m */
+                return "<?= {$m[1]} ?>";
+            },
             $value
         ) ?? $value;
 
@@ -388,6 +414,7 @@ class Compiler
         $value = preg_replace_callback(
             '/{{\s*(.+?)\s*}}/s',
             function ($m) {
+                /** @var array<int, string> $m */
                 $expr = trim($m[1]);
                 if (! str_contains($expr, '|')) {
                     return "<?= htmlspecialchars((string) ({$expr}), ENT_QUOTES, 'UTF-8') ?>";
