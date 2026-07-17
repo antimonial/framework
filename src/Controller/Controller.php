@@ -143,7 +143,12 @@ class Controller
             throw new ValidationException($errors);
         }
 
-        return $data;
+        $validated = [];
+        foreach ($rules as $field => $unused) {
+            $validated[$field] = $data[$field] ?? null;
+        }
+
+        return $validated;
     }
 
     /**

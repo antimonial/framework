@@ -47,6 +47,18 @@ class Route
     public array $middleware = [];
 
     /**
+     * Optional route name for reverse URL generation.
+     */
+    public ?string $name = null;
+
+    /**
+     * Global registry of named routes: name => Route instance.
+     *
+     * @var array<string, Route>
+     */
+    public static array $namedRoutes = [];
+
+    /**
      * @param  string  $method  HTTP method
      * @param  string  $path  URI path
      * @param  Closure|array{0: class-string, 1: string}  $handler  Route handler
@@ -56,6 +68,21 @@ class Route
         $this->method = $method;
         $this->path = $path;
         $this->handler = $handler;
+    }
+
+    /**
+     * Set the route name for reverse URL generation (fluent).
+     *
+     * @example $router->get('/posts/{slug}', ...)->name('posts.show');
+     *
+     * @return $this
+     */
+    public function name(string $name): static
+    {
+        $this->name = $name;
+        self::$namedRoutes[$name] = $this;
+
+        return $this;
     }
 
     /**

@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 use Antimonial\Core\Config;
 use Antimonial\Http\Response;
+use Antimonial\Routing\Route;
 use Antimonial\View\View;
 
 /**
@@ -84,6 +85,28 @@ function env(string $key, mixed $default = null): mixed
         'null', '' => null,
         default => $value,
     };
+}
+
+/**
+ * Generate a URL by named route.
+ *
+ * @example route('posts.show', ['slug' => 'hello-world'])
+ *
+ * @throws RuntimeException If the route name is not defined
+ */
+function route(string $name, array $params = []): string
+{
+    if (! isset(Route::$namedRoutes[$name])) {
+        throw new RuntimeException("Route [{$name}] not defined.");
+    }
+
+    $url = Route::$namedRoutes[$name]->path;
+
+    foreach ($params as $key => $value) {
+        $url = str_replace('{'.$key.'}', (string) $value, $url);
+    }
+
+    return $url;
 }
 
 /**

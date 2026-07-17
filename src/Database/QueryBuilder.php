@@ -535,6 +535,38 @@ class QueryBuilder
     }
 
     /**
+     * Paginate query results.
+     *
+     * Clones the builder before counting so the current state is preserved
+     * for the actual data query.
+     *
+     * Returns a stdClass with: items, total, perPage, currentPage, totalPages.
+     *
+     * @example
+     *   $result = DB::table('posts')
+     *       ->where('status', 'published')
+     *       ->orderBy('created_at', 'DESC')
+     *       ->paginate(10, $page);
+     */
+    public function paginate(int $perPage = 15, int $page = 1): object
+    {
+        $page = max(1, $page);
+
+        $total = (clone $this)->count();
+
+        $offset = ($page - 1) * $perPage;
+        $items = $this->limit($perPage)->offset($offset)->get();
+
+        return (object) [
+            'items'       => $items,
+            'total'       => $total,
+            'perPage'     => $perPage,
+            'currentPage' => $page,
+            'totalPages'  => max(1, (int) ceil($total / $perPage)),
+        ];
+    }
+
+    /**
      * Get the first result row, or null if none found.
      *
      * @throws PDOException If the query fails
