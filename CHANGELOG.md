@@ -5,6 +5,13 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2026-07-18
+
+### Added
+
+- **Database migrations.** New `Antimonial\Database\Migrator` accepts a `Connection` and a migrations directory path in its constructor. `run(): array` executes all pending migrations (lexically sorted filenames) and returns the filenames it ran; `rollback(): array` reverts the most recent batch and returns the names reverted. Applied migrations are tracked in a `migrations` table (`id`, `migration`, `batch`, `ran_at`) created automatically if missing. Each migration file returns an object implementing the new `Antimonial\Database\Migration` interface (`up(Connection $db): void` / `down(Connection $db): void`) and runs raw SQL through the `Connection` — there is no schema builder / column DSL.
+- `Connection::getDriver()` exposes the configured driver name (e.g. `mysql`, `sqlite`) for driver-specific DDL.
+
 ## [0.12.0] - 2026-07-18
 
 ### Added
