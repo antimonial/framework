@@ -386,6 +386,12 @@ class Controller
                     ? null
                     : 'The '.$field.' must be an image.'),
 
+            // NOTE: `mimes` validates the CLIENT-DECLARED file extension only
+            // (the client fully controls the filename), NOT the file's real
+            // content. A renamed executable can pass `mimes:pdf`. For genuine
+            // content verification, use `image`, which reads the binary's MIME
+            // type via mime_content_type(). This matches Laravel's `mimes`
+            // semantics (extension-to-type mapping, no binary inspection).
             'mimes' => (! $file->isValid())
                 ? 'The '.$field.' file is invalid: '.$file->errorMessage()
                 : (in_array(strtolower($file->clientExtension()), explode(',', $paramStr), true)
