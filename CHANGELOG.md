@@ -5,6 +5,12 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.1] - 2026-07-18
+
+### Fixed
+
+- **TypeError on array-valued validation fields.** `Controller::validate()` threw an uncaught `TypeError` (from `strlen()`/`preg_match()`) when a field submitted via array notation (e.g. `name="tags[]"`) was validated against a non-`required` rule such as `min`, `max`, `alpha`, or `alpha_num`. Array fields now only accept `required` (fails on an empty list) and an explicit `array` rule; any other rule yields a normal validation error ("The {field} field must be a single value, not a list.") instead of a fatal error.
+
 ## [0.18.0] - 2026-07-18
 
 ### Added

@@ -125,13 +125,29 @@ class Controller
 
         foreach ($rules as $field => $ruleString) {
             $ruleList = array_map('trim', explode('|', $ruleString));
-            /** @var string $value */
             $value = $data[$field] ?? '';
             $fieldErrors = [];
 
             // A field carrying any file rule is validated against the
             // UploadedFile object, never through the string-based path.
             $hasFileRule = $this->hasFileRule($ruleList);
+
+            // HTML inputs with array notation (e.g. name="tags[]") submit an
+            // array. Only `required` and an explicit `array` rule may inspect
+            // it; any other rule must yield a normal validation error rather
+            // than throwing a TypeError from strlen()/preg_match() on an array.
+            if (is_array($value)) {
+                $fieldErrors = array_merge($fieldErrors, $this->applyArrayRules($ruleList, $field, $value));
+
+                if (! empty($fieldErrors)) {
+                    $errors[$field] = $fieldErrors;
+                }
+
+                continue;
+            }
+
+            /** @var string $value Non-array values are treated as strings here. */
+            $value = is_string($value) ? $value : '';
 
             foreach ($ruleList as $rule) {
                 if ($hasFileRule) {
@@ -177,6 +193,45 @@ class Controller
         }
 
         return false;
+    }
+
+    /**
+     * Apply the rules that are valid for an array-valued field.
+     *
+     * Only `required` (fail when the array is empty) and an explicit
+     * `array` rule are evaluated against the list. Every other rule name
+     * applied to an array field produces a normal validation error
+     * ("must be a single value, not a list") instead of a PHP-level
+     * TypeError from strlen()/preg_match() on an array.
+     *
+     * @param  string[]  $ruleList  The pipe-split rules for the field
+     * @param  string  $field  Field being validated
+     * @param  mixed[]  $value  The submitted array value
+     * @return string[] Error messages (empty if all rules pass)
+     */
+    private function applyArrayRules(array $ruleList, string $field, array $value): array
+    {
+        $errors = [];
+
+        foreach ($ruleList as $rule) {
+            $name = explode(':', $rule)[0];
+
+            if ($name === 'required') {
+                if ($value === []) {
+                    $errors[] = 'The '.$field.' field is required.';
+                }
+
+                continue;
+            }
+
+            if ($name === 'array') {
+                continue;
+            }
+
+            $errors[] = 'The '.$field.' field must be a single value, not a list.';
+        }
+
+        return $errors;
     }
 
     /**
