@@ -5,6 +5,13 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] - 2026-07-18
+
+### Added
+
+- **Form re-population.** New global helpers `old(string $key, mixed $default = '')` and `errors()` read the validation errors and submitted input flashed by a failed form submission, for use inside views (e.g. `<input value="<?= e(old('email')) ?>">`).
+- `App` now handles `ValidationException` contextually: JSON / XHR clients (or when sessions are disabled) receive the errors as a `422` JSON body; browser form submissions with sessions enabled get the errors and input flashed and a `303` redirect back to the `Referer` (defaulting to `/`) so the form can be re-populated.
+
 ## [0.14.0] - 2026-07-18
 
 ### Added

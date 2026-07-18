@@ -16,6 +16,7 @@ declare(strict_types=1);
 use Antimonial\Core\Config;
 use Antimonial\Http\Response;
 use Antimonial\Routing\Route;
+use Antimonial\Session\Session;
 use Antimonial\View\View;
 
 /**
@@ -139,13 +140,56 @@ function config(string $key, mixed $default = null): mixed
 }
 
 /**
- * Dump variables and die (debug helper).
+ * Get the flashed validation errors from the previous request.
  *
- * @example dd($user, $request->all());
+ * Returns the array of field => messages flashed by a failed validation
+ * (see App::validationErrorResponse). Use inside a view to render errors.
  *
- * @param  mixed  ...$vars  Variables to inspect
+ * @example foreach (errors()['email'] ?? [] as $msg) { echo $msg; }
+ *
+ * @return array<string, mixed> Validation errors keyed by field
+ *
+ * @see Session::getFlash()
  */
-function dd(mixed ...$vars): never
+function errors(): array
+{
+    /** @var mixed $flashed */
+    $flashed = Session::getFlash('errors', []);
+
+    /** @var array<string, mixed> $result */
+    $result = is_array($flashed) ? $flashed : [];
+
+    return $result;
+}
+
+/**
+ * Get a flashed "old" input value from the previous request.
+ *
+ * After a failed validation the submitted input is flashed so forms can be
+ * re-populated. Returns the value for $key, or $default if not present.
+ *
+ * @example <input value="<?= e(old('email')) ?>">
+ *
+ * @param  string  $key  Input key
+ * @param  mixed  $default  Default if not flashed
+ * @return mixed The old value, or default
+ *
+ * @see Session::getFlash()
+ */
+function old(string $key, mixed $default = ''): mixed
+{
+    /** @var mixed $old */
+    $old = Session::getFlash('old', []);
+
+    if (! is_array($old)) {
+        return $default;
+    }
+
+    return $old[$key] ?? $default;
+}
+
+/**
+ * Dump variables and die (debug helper).
 {
     echo '<pre style="background:#1e1e2e;color:#cdd6f4;padding:1rem;font-family:monospace;">';
     foreach ($vars as $var) {

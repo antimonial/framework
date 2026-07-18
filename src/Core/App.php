@@ -99,7 +99,7 @@ class App
         } catch (HttpNotFoundException $e) {
             $response = $this->notFoundResponse();
         } catch (ValidationException $e) {
-            $response = $this->validationErrorResponse($e->errors());
+            $response = $this->validationErrorResponse($e->errors(), $request);
         }
 
         $response->send();
@@ -128,18 +128,57 @@ class App
      * Build a 422 response carrying the validation errors as JSON.
      */
     /**
-     * Build a 422 response carrying the validation errors as JSON.
+     * Build a response for a failed validation.
+     *
+     * For JSON / XHR clients (or when sessions are disabled) the errors are
+     * returned as a 422 JSON body. For browser form submissions with sessions
+     * enabled, the errors and the submitted input are flashed and the user is
+     * redirected (303) back to the referring page (defaulting to '/') so the
+     * form can be re-populated via the `old()` and `errors()` helpers.
      *
      * @param  array<string, string[]>  $errors  Validation errors keyed by field
+     * @param  Request  $request  The originating request
      */
-    private function validationErrorResponse(array $errors): Response
+    private function validationErrorResponse(array $errors, Request $request): Response
     {
-        $body = json_encode(['errors' => $errors], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $wantsJson = $this->requestWantsJson($request);
+        $sessionsEnabled = Config::get('app.session', false) === true;
 
-        return (new Response)
-            ->status(422)
-            ->header('Content-Type', 'application/json; charset=UTF-8')
-            ->body($body);
+        if ($wantsJson || ! $sessionsEnabled) {
+            $body = json_encode(['errors' => $errors], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+
+            return (new Response)
+                ->status(422)
+                ->header('Content-Type', 'application/json; charset=UTF-8')
+                ->body($body);
+        }
+
+        Session::flash('errors', $errors);
+        Session::flash('old', $request->all());
+
+        /** @var string $referer */
+        $referer = $request->header('referer', '/') ?? '/';
+
+        return (new Response)->redirect($referer, 303);
+    }
+
+    /**
+     * Whether the request expects a JSON response.
+     *
+     * @param  Request  $request  The incoming request
+     */
+    private function requestWantsJson(Request $request): bool
+    {
+        /** @var mixed $accept */
+        $accept = $request->header('Accept', '');
+        /** @var mixed $xhr */
+        $xhr = $request->header('X-Requested-With', '');
+
+        $acceptStr = is_string($accept) ? $accept : '';
+        $xhrStr = is_string($xhr) ? $xhr : '';
+
+        return stripos($acceptStr, 'application/json') !== false
+            || strtolower($xhrStr) === 'xmlhttprequest';
     }
 
     /**
