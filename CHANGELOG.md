@@ -5,6 +5,12 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.2] - 2026-07-18
+
+### Fixed
+
+- **Unsafe operators in `QueryBuilder::isOperator()`.** `isOperator()` listed `IN`, `NOT IN`, `BETWEEN`, `IS` and `IS NOT`, but `where()`/`orWhere()` bind exactly one value per clause, so `where('status', 'IN', [...])` or `where('age', 'BETWEEN', [...])` compiled a single `?` placeholder for a multi-value operator and failed at execution time with an unclear error. Those operators are removed (keeping only `=`, `!=`, `<>`, `<`, `>`, `<=`, `>=`, `LIKE`, `NOT LIKE`); `IN`/`NOT IN` already have correct dedicated `whereIn()`/`whereNotBetween()` implementations. New `whereBetween()`/`whereNotBetween()` validate the identifier and bind two separate values. `where()`/`orWhere()` now throw a clear `InvalidArgumentException` when given an array value.
+
 ## [0.18.1] - 2026-07-18
 
 ### Fixed

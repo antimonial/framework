@@ -221,6 +221,12 @@ class QueryBuilder
             $operatorOrValue = '=';
         }
 
+        if (is_array($value)) {
+            throw new InvalidArgumentException(
+                'where() binds exactly one value; pass a scalar, or use whereIn()/whereNotIn()/whereBetween() for multiple values.'
+            );
+        }
+
         /** @var string $operatorOrValue */
         $operatorOrValue = is_string($operatorOrValue) ? $operatorOrValue : '';
         $placeholder = $this->addBinding($value);
@@ -268,6 +274,12 @@ class QueryBuilder
         if ($value === null && ! $this->isOperator($operatorOrValue)) {
             $value = $operatorOrValue;
             $operatorOrValue = '=';
+        }
+
+        if (is_array($value)) {
+            throw new InvalidArgumentException(
+                'orWhere() binds exactly one value; pass a scalar, or use whereIn()/whereNotIn()/whereBetween() for multiple values.'
+            );
         }
 
         /** @var string $operatorOrValue */
@@ -341,6 +353,54 @@ class QueryBuilder
             'logic' => 'AND',
             'sql' => "{$column} NOT IN (".implode(', ', $placeholders).')',
             'bindings' => $bindings,
+        ];
+
+        return $this;
+    }
+
+    /**
+     * Add a WHERE BETWEEN clause.
+     *
+     * @example ->whereBetween('age', 18, 65)
+     *
+     * @param  mixed  $min  Lower bound
+     * @param  mixed  $max  Upper bound
+     * @return $this
+     */
+    public function whereBetween(string $column, mixed $min, mixed $max): static
+    {
+        $column = $this->assertIdentifier($column);
+        $minPlaceholder = $this->addBinding($min);
+        $maxPlaceholder = $this->addBinding($max);
+
+        $this->wheres[] = [
+            'logic' => 'AND',
+            'sql' => "{$column} BETWEEN {$minPlaceholder} AND {$maxPlaceholder}",
+            'bindings' => [$min, $max],
+        ];
+
+        return $this;
+    }
+
+    /**
+     * Add a WHERE NOT BETWEEN clause.
+     *
+     * @example ->whereNotBetween('age', 18, 65)
+     *
+     * @param  mixed  $min  Lower bound
+     * @param  mixed  $max  Upper bound
+     * @return $this
+     */
+    public function whereNotBetween(string $column, mixed $min, mixed $max): static
+    {
+        $column = $this->assertIdentifier($column);
+        $minPlaceholder = $this->addBinding($min);
+        $maxPlaceholder = $this->addBinding($max);
+
+        $this->wheres[] = [
+            'logic' => 'AND',
+            'sql' => "{$column} NOT BETWEEN {$minPlaceholder} AND {$maxPlaceholder}",
+            'bindings' => [$min, $max],
         ];
 
         return $this;
@@ -1057,7 +1117,7 @@ class QueryBuilder
 
         return in_array(
             $normalized,
-            ['=', '!=', '<>', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'BETWEEN', 'IS', 'IS NOT'],
+            ['=', '!=', '<>', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE'],
             true
         );
     }
