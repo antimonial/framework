@@ -5,6 +5,12 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.3] - 2026-07-18
+
+### Fixed
+
+- **`Response::send()` no longer calls `exit()` on redirect.** `send()` hard-killed the PHP process after setting the `Location` header. As `App::run()` already treats `send()` as the last statement of the request lifecycle, this had no production effect, but it blocked unit-testing any controller that triggered a redirect without process isolation and prevented `register_shutdown_function` hooks (such as `ErrorHandler`'s shutdown handler) from running. The `exit` call was removed; no middleware, `ErrorHandler`, or `App` code relied on the process terminating there.
+
 ## [0.18.2] - 2026-07-18
 
 ### Fixed

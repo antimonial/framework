@@ -125,6 +125,16 @@ class Response
     }
 
     /**
+     * Whether the response has already been sent.
+     *
+     * @return bool True if send() has run
+     */
+    public function wasSent(): bool
+    {
+        return $this->sent;
+    }
+
+    /**
      * Set the response body as JSON.
      *
      * Encodes the data, sets Content-Type to application/json,
@@ -302,9 +312,5 @@ class Response
 
         echo $this->body;
         $this->sent = true;
-
-        if (isset($this->headers['Location'])) {
-            exit;
-        }
     }
 }
