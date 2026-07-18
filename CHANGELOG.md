@@ -5,6 +5,13 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0] - 2026-07-18
+
+### Added
+
+- **File logging.** New `Antimonial\Core\Logger` static facade with `write(string $level, string $message, string $directory)` that appends timestamped, single-line entries to a per-day `YYYY-MM-DD.log` file in a caller-supplied directory (created recursively if missing). Accepts the standard RFC 5424 levels and throws on an unknown level.
+- `ErrorHandler` now file-logs uncaught exceptions via `Logger` (best-effort, in addition to `error_log`). The log directory is set with `ErrorHandler::setLogDirectory(string $directory)` or falls back to the `app.log_dir` config value, then to `storage/logs` under `ROOT_PATH`.
+
 ## [0.16.0] - 2026-07-18
 
 ### Added

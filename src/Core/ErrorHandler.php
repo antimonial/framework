@@ -25,6 +25,11 @@ class ErrorHandler
     private static bool $debug = false;
 
     /**
+     * @var string|null Directory for file logging (null = use config default)
+     */
+    private static ?string $logDirectory = null;
+
+    /**
      * Enable debug mode for detailed error reporting.
      *
      * @param  bool  $debug  True to enable debug mode
@@ -42,6 +47,39 @@ class ErrorHandler
     public static function isDebug(): bool
     {
         return self::$debug;
+    }
+
+    /**
+     * Set the directory where exceptions are file-logged.
+     *
+     * When null (the default), the directory falls back to the
+     * 'app.log_dir' config value, then to 'storage/logs' under ROOT_PATH.
+     *
+     * @param  string|null  $directory  Log directory, or null to use config
+     */
+    public static function setLogDirectory(?string $directory): void
+    {
+        self::$logDirectory = $directory;
+    }
+
+    /**
+     * Resolve the directory to write log files to.
+     *
+     * @return string Absolute log directory path
+     */
+    private static function resolveLogDirectory(): string
+    {
+        if (self::$logDirectory !== null) {
+            return self::$logDirectory;
+        }
+
+        /** @var mixed $configured */
+        $configured = Config::get('app.log_dir');
+        if (is_string($configured) && $configured !== '') {
+            return $configured;
+        }
+
+        return rtrim(ROOT_PATH, '/\\').'/storage/logs';
     }
 
     /**
@@ -114,18 +152,28 @@ class ErrorHandler
     /**
      * Log the exception to the error log.
      *
+     * Writes a file entry via {@see Logger} (best-effort; a failure to
+     * write does not suppress the rendered error page) and also forwards
+     * to PHP's error_log for visibility in the SAPI / system log.
+     *
      * @param  Throwable  $exception  Exception to log
      */
     private static function log(Throwable $exception): void
     {
         $message = sprintf(
-            "[%s] %s in %s:%d\n",
-            date('Y-m-d H:i:s'),
+            '%s in %s:%d',
             $exception->getMessage(),
             $exception->getFile(),
             $exception->getLine()
         );
-        error_log($message);
+
+        try {
+            Logger::write('error', $message, self::resolveLogDirectory());
+        } catch (Throwable) {
+            // File logging is best-effort; never let it break error handling.
+        }
+
+        error_log(sprintf('[%s] %s', date('Y-m-d H:i:s'), $message));
     }
 
     /**
