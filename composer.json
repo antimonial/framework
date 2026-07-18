@@ -3,6 +3,7 @@
     "description": "A PHP MVC framework where what you read is what runs.",
     "type": "framework",
     "license": "MIT",
+    "version": "0.19.0",
     "keywords": ["php", "framework", "mvc", "query-builder", "minimal"],
     "homepage": "https://github.com/antimonial/framework",
     "authors": [
