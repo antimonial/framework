@@ -150,7 +150,9 @@ final class RequestTest extends TestCase
         ];
         $file = Request::fromGlobals()->file('avatar');
         $this->assertNotNull($file);
-        $this->assertSame('test.png', $file['name']);
+        $this->assertInstanceOf(\Antimonial\Http\UploadedFile::class, $file);
+        $this->assertSame('test.png', $file->clientName());
+        $this->assertSame(1024, $file->size());
     }
 
     public function test_file_returns_null_on_missing(): void

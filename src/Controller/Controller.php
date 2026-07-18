@@ -6,6 +6,7 @@ namespace Antimonial\Controller;
 
 use Antimonial\Http\Request;
 use Antimonial\Http\Response;
+use Antimonial\Http\UploadedFile;
 use Antimonial\Http\ValidationException;
 use Antimonial\View\View;
 
@@ -127,8 +128,17 @@ class Controller
             $value = $data[$field] ?? '';
             $fieldErrors = [];
 
+            // A field carrying any file rule is validated against the
+            // UploadedFile object, never through the string-based path.
+            $hasFileRule = $this->hasFileRule($ruleList);
+
             foreach ($ruleList as $rule) {
-                $error = $this->applyRule($rule, $field, $value, $data);
+                if ($hasFileRule) {
+                    $error = $this->applyFileRule($rule, $field, $request);
+                } else {
+                    $error = $this->applyRule($rule, $field, $value, $data);
+                }
+
                 if ($error !== null) {
                     $fieldErrors[] = $error;
                 }
@@ -149,6 +159,23 @@ class Controller
         }
 
         return $validated;
+    }
+
+    /**
+     * Whether any of the rules for a field is a file rule.
+     *
+     * @param  string[]  $ruleList
+     */
+    private function hasFileRule(array $ruleList): bool
+    {
+        foreach ($ruleList as $rule) {
+            $name = explode(':', $rule)[0];
+            if (in_array($name, ['file', 'image', 'mimes', 'max_size'], true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -202,6 +229,59 @@ class Controller
             'alpha_num' => ($value !== '' && ! preg_match('/^[a-zA-Z0-9]+$/', $value))
                 ? 'The '.$field.' field must contain only letters and numbers.'
                 : null,
+
+            default => null,
+        };
+    }
+
+    /**
+     * Apply a single file validation rule.
+     *
+     * File rules operate on the UploadedFile for the field (resolved via
+     * $request->file()), not on the string data array. A missing file is
+     * treated as "no error" here — absence is enforced by the `required`
+     * rule, consistent with the project's rule-composition convention.
+     *
+     * @param  string  $rule  Rule name with optional ":param" suffix
+     * @param  string  $field  Field being validated
+     * @param  Request  $request  The current request
+     * @return string|null Error message or null if valid
+     */
+    private function applyFileRule(string $rule, string $field, Request $request): ?string
+    {
+        $params = explode(':', $rule);
+        $ruleName = $params[0];
+        $paramStr = (string) ($params[1] ?? '');
+
+        $file = $request->file($field);
+
+        // No file present: let `required` handle absence.
+        if ($file === null) {
+            return null;
+        }
+
+        return match ($ruleName) {
+            'file' => $file->isValid()
+                ? null
+                : 'The '.$field.' file is invalid: '.$file->errorMessage(),
+
+            'image' => (! $file->isValid())
+                ? 'The '.$field.' file is invalid: '.$file->errorMessage()
+                : (str_starts_with($file->mimeType(), 'image/')
+                    ? null
+                    : 'The '.$field.' must be an image.'),
+
+            'mimes' => (! $file->isValid())
+                ? 'The '.$field.' file is invalid: '.$file->errorMessage()
+                : (in_array(strtolower($file->clientExtension()), explode(',', $paramStr), true)
+                    ? null
+                    : 'The '.$field.' must be a file of type: '.$paramStr.'.'),
+
+            'max_size' => (! $file->isValid())
+                ? 'The '.$field.' file is invalid: '.$file->errorMessage()
+                : (($file->size() / 1024) <= (float) $paramStr
+                    ? null
+                    : 'The '.$field.' must not be larger than '.$paramStr.' kilobytes.'),
 
             default => null,
         };

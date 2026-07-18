@@ -5,6 +5,18 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-07-18
+
+### Added
+
+- **File uploads.** New `Antimonial\Http\UploadedFile` wraps a single `$_FILES` entry with `isValid()`, `error()`, `errorMessage()`, `size()`, `clientName()`, `clientExtension()`, `mimeType()` (detected from the temp file via `mime_content_type()`, never the client-supplied type), and `store(string $directory, string $name)` (creates the directory if missing, moves via `move_uploaded_file()`, returns the final path). The filename is always caller-supplied — no implicit naming convention.
+- `Request::file(string $key)` now returns an `UploadedFile` instance (or `null` if the key is absent) instead of the raw `$_FILES` array.
+- `Controller::validate()` now supports file rules: `file`, `image`, `mimes:ext1,ext2`, and `max_size:kilobytes`. A field carrying any file rule is validated against its `UploadedFile` (via `Request::file()`), never through the string-based path. Absence is left to the `required` rule, consistent with the existing rule-composition convention.
+
+### Changed
+
+- `Request::file()` return type changed from `?array` to `?UploadedFile`. Any code reading `$_FILES` data directly from `Request::file()` must now use the `UploadedFile` API (e.g. `->clientName()` instead of `['name']`).
+
 ## [0.11.1] - 2026-07-17
 
 ### Changed

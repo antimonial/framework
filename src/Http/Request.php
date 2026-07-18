@@ -283,11 +283,19 @@ class Request
     /**
      * Get an uploaded file.
      *
-     * @return array{name: string, type: string, tmp_name: string, error: int, size: int}|null
+     * Returns an UploadedFile wrapper for the given key, or null if the
+     * key is not present in $_FILES.
      */
-    public function file(string $key): ?array
+    public function file(string $key): ?UploadedFile
     {
-        return $this->files[$key] ?? null;
+        if (! isset($this->files[$key])) {
+            return null;
+        }
+
+        /** @var array{name: string, type: string, tmp_name: string, error: int, size: int} $entry */
+        $entry = $this->files[$key];
+
+        return new UploadedFile($entry);
     }
 
     /**
