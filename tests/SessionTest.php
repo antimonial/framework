@@ -27,6 +27,13 @@ final class SessionTest extends TestCase
         mkdir($this->dir, 0777, true);
         ini_set('session.save_path', $this->dir);
         ini_set('session.use_cookies', '0');
+
+        // Reset the framework's static "started" flag so each test gets a
+        // fresh session bound to this test's save path.
+        $ref = new \ReflectionProperty(Session::class, 'started');
+        $ref->setAccessible(true);
+        $ref->setValue(null, false);
+        @session_write_close();
     }
 
     protected function tearDown(): void

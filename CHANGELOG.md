@@ -5,6 +5,14 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-07-18
+
+### Added
+
+- **Authentication.** New `Antimonial\Security\Auth` static facade: `useModel(string $modelClass)` points it at your user `Model`; `attempt(array $credentials)` verifies a `password` column via `password_verify()` (bcrypt) and logs the user in on success; `login(object $user)` / `logout()` store or clear the user id in the session and regenerate the session id (session-fixation protection); `check()`, `id()`, and `user()` expose the current auth state. Auth reuses the framework's opt-in `Session` layer — no separate auth service to wire up.
+- `Antimonial\Middleware\AuthMiddleware` blocks unauthenticated requests, redirecting browsers to `/login` (302) and returning `401` JSON for `Accept: application/json` / `X-Requested-With: XMLHttpRequest` clients.
+- `Antimonial\Middleware\GuestMiddleware` is the inverse: it redirects already-authenticated browsers to `/` (302) and returns `403` JSON for XHR/JSON clients, for use on login/register pages.
+
 ## [0.13.0] - 2026-07-18
 
 ### Added
