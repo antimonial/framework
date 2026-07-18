@@ -5,6 +5,12 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] - 2026-07-18
+
+### Added
+
+- **CSRF header fallback.** `CsrfMiddleware` now accepts the token from the `X-CSRF-TOKEN` or `X-XSRF-TOKEN` request header when the `_token` form field is absent, in addition to the existing `_token` POST field — so AJAX clients can send the token without a form body. The form field still takes precedence.
+
 ## [0.15.0] - 2026-07-18
 
 ### Added

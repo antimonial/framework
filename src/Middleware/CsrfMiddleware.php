@@ -48,7 +48,9 @@ final class CsrfMiddleware implements MiddlewareInterface
 
         try {
             /** @var string|null $token */
-            $token = $request->post('_token') ?? $request->header('X-CSRF-TOKEN');
+            $token = $request->post('_token')
+                ?? $request->header('X-CSRF-TOKEN')
+                ?? $request->header('X-XSRF-TOKEN');
             Csrf::verify($token);
         } catch (TokenMismatchException) {
             return (new Response)
