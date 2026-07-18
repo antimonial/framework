@@ -5,6 +5,12 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0] - 2026-07-18
+
+### Documentation
+
+- **README accuracy pass.** Removed the false "table name guessing" claim from the `Model` row (the table is declared explicitly since the v0.10.0 breaking change). Added File Uploads, Database Migrations, Authentication, Form Re-population, File Logging and DB validation rules to the "What's Included" table, plus a "Usage Examples" section covering all seven features. Clarified the `mimes` validation rule docblock: it checks the client-declared extension only (not the file content); use `image` for real content verification.
+
 ## [0.18.3] - 2026-07-18
 
 ### Fixed
