@@ -5,6 +5,15 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.0] - 2026-07-18
+
+### Added
+
+- **Database validation rules.** `Controller::validate()` now supports two new rules backed by the database (via the `DB` facade / `QueryBuilder`):
+  - `unique:table,column` — fails if a row with that value already exists (e.g. for registration). The column defaults to the field name when omitted.
+  - `exists:table,column` — fails if no matching row exists (e.g. for foreign keys). The column defaults to the field name when omitted.
+  - Both rules pass when the submitted value is empty, so they compose with `required` as needed.
+
 ## [0.17.0] - 2026-07-18
 
 ### Added

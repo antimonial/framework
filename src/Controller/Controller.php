@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Antimonial\Controller;
 
+use Antimonial\Database\DB;
 use Antimonial\Http\Request;
 use Antimonial\Http\Response;
 use Antimonial\Http\UploadedFile;
@@ -230,8 +231,67 @@ class Controller
                 ? 'The '.$field.' field must contain only letters and numbers.'
                 : null,
 
+            'unique' => ($value === '')
+                ? null
+                : (! $this->isUnique($paramStr, $field, $value)
+                    ? 'The '.$field.' has already been taken.'
+                    : null),
+
+            'exists' => ($value === '')
+                ? null
+                : (! $this->recordExists($paramStr, $field, $value)
+                    ? 'The selected '.$field.' is invalid.'
+                    : null),
+
             default => null,
         };
+    }
+
+    /**
+     * Whether a value is unique in the database.
+     *
+     * Rule format: unique:table,column (column defaults to the field name).
+     *
+     * @param  string  $paramStr  The "table,column" parameter string
+     * @param  string  $field  The field being validated
+     * @param  string  $value  The value to check
+     */
+    private function isUnique(string $paramStr, string $field, string $value): bool
+    {
+        [$table, $column] = $this->parseDbRule($paramStr, $field);
+
+        return ! DB::table($table)->where($column, $value)->exists();
+    }
+
+    /**
+     * Whether a record exists in the database for the value.
+     *
+     * Rule format: exists:table,column (column defaults to the field name).
+     *
+     * @param  string  $paramStr  The "table,column" parameter string
+     * @param  string  $field  The field being validated
+     * @param  string  $value  The value to check
+     */
+    private function recordExists(string $paramStr, string $field, string $value): bool
+    {
+        [$table, $column] = $this->parseDbRule($paramStr, $field);
+
+        return DB::table($table)->where($column, $value)->exists();
+    }
+
+    /**
+     * Parse a "table,column" DB-rule parameter.
+     *
+     * @return array{0: string, 1: string} [table, column]
+     */
+    private function parseDbRule(string $paramStr, string $field): array
+    {
+        /** @var string[] $parts */
+        $parts = explode(',', $paramStr);
+        $table = $parts[0] ?? '';
+        $column = $parts[1] ?? $field;
+
+        return [$table, $column];
     }
 
     /**
