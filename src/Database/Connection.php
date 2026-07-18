@@ -115,6 +115,16 @@ class Connection
         return $pdo;
     }
 
+    /**
+     * Get the configured database driver name (e.g. 'mysql', 'sqlite').
+     *
+     * Useful for driver-specific DDL (e.g. auto-increment column syntax).
+     */
+    public function getDriver(): string
+    {
+        return $this->config['driver'];
+    }
+
     // ─── Query Execution ────────────────────────────────────────
 
     /**
