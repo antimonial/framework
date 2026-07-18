@@ -16,7 +16,9 @@ use PHPUnit\Framework\TestCase;
 final class UploadedFileServerTest extends TestCase
 {
     private static string $docRoot;
+
     private static string $host;
+
     private static ?string $pidFile = null;
 
     public static function setUpBeforeClass(): void

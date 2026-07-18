@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 // Integration harness for real HTTP file uploads (is_uploaded_file /
 // move_uploaded_file only behave correctly for genuine uploads).
 //
@@ -26,7 +28,8 @@ switch ($out['action']) {
         break;
 
     case 'validate':
-        $ctrl = new class extends Controller {
+        $ctrl = new class extends Controller
+        {
             public function run(Request $r): array
             {
                 return $this->validate($r, [

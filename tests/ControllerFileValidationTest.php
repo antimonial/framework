@@ -63,7 +63,8 @@ final class ControllerFileValidationTest extends TestCase
 
     private function ctrl(): Controller
     {
-        return new class extends Controller {
+        return new class extends Controller
+        {
             public function run(Request $r, array $rules): array
             {
                 return $this->validate($r, $rules);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Antimonial\Tests;
 
 use Antimonial\Http\Request;
+use Antimonial\Http\UploadedFile;
 use PHPUnit\Framework\TestCase;
 
 final class RequestTest extends TestCase
@@ -150,7 +151,7 @@ final class RequestTest extends TestCase
         ];
         $file = Request::fromGlobals()->file('avatar');
         $this->assertNotNull($file);
-        $this->assertInstanceOf(\Antimonial\Http\UploadedFile::class, $file);
+        $this->assertInstanceOf(UploadedFile::class, $file);
         $this->assertSame('test.png', $file->clientName());
         $this->assertSame(1024, $file->size());
     }
