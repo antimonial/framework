@@ -281,4 +281,52 @@ final class RouterTest extends TestCase
         $this->assertNotFalse($result);
         $this->assertSame([], $result['params']);
     }
+
+    public function test_group_root_route(): void
+    {
+        $this->router->group('/admin', function () {
+            $this->router->get('/', fn () => 'dashboard');
+        });
+
+        $_SERVER['REQUEST_URI'] = '/admin';
+        $request = Request::fromGlobals();
+        $result = $this->router->dispatch($request);
+
+        $this->assertSame('dashboard', $result['handler']());
+    }
+
+    public function test_dispatch_trailing_slash_normalizes_uri(): void
+    {
+        $this->router->get('/users', fn () => 'list');
+
+        $_SERVER['REQUEST_URI'] = '/users/';
+        $request = Request::fromGlobals();
+        $result = $this->router->dispatch($request);
+
+        $this->assertSame('list', $result['handler']());
+    }
+
+    public function test_dispatch_trailing_slash_root(): void
+    {
+        $this->router->get('/', fn () => 'home');
+
+        $_SERVER['REQUEST_URI'] = '/';
+        $request = Request::fromGlobals();
+        $result = $this->router->dispatch($request);
+
+        $this->assertSame('home', $result['handler']());
+    }
+
+    public function test_group_prefix_root_with_trailing_slash(): void
+    {
+        $this->router->group('/admin/', function () {
+            $this->router->get('/dashboard', fn () => 'dashboard');
+        });
+
+        $_SERVER['REQUEST_URI'] = '/admin/dashboard';
+        $request = Request::fromGlobals();
+        $result = $this->router->dispatch($request);
+
+        $this->assertSame('dashboard', $result['handler']());
+    }
 }

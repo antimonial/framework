@@ -99,8 +99,14 @@ class ViewEngine
      *
      * @param  string  $name  Section name (matches @yield in the layout)
      */
-    public function section(string $name): void
+    public function section(string $name, string $value = null): void
     {
+        if ($value !== null) {
+            $this->sections[$name] = $value;
+
+            return;
+        }
+
         $this->activeSection = $name;
         ob_start();
     }

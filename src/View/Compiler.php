@@ -24,7 +24,7 @@ class Compiler
      * Compiler version — bump this whenever the compilation logic changes
      * to force recompilation of all cached views.
      */
-    public const VERSION = '0.9.2';
+    public const VERSION = '0.9.3';
 
     /**
      * HTML-escaping expression template (sprintf with the value to escape).
@@ -227,7 +227,7 @@ class Compiler
         // 4. Echos (raw first, then escaped)
         $html = $this->compileEchos($html);
 
-        return $footer.$html;
+        return $html.$footer;
     }
 
     // ─── Block open / close helpers ────────────────────────────

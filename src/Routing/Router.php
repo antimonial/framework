@@ -207,7 +207,7 @@ class Router
     public function dispatch(Request $request): array
     {
         $method = $request->method();
-        $uri = $request->uri();
+        $uri = rtrim($request->uri(), '/') ?: '/';
 
         // Try exact match first (O(1) hash lookup)
         if (isset($this->routes[$method][$uri])) {
@@ -293,7 +293,9 @@ class Router
             $prefix .= $group['prefix'];
         }
 
-        return '/'.trim($prefix, '/').'/'.ltrim($path, '/');
+        $path = '/'.trim($prefix, '/').'/'.ltrim($path, '/');
+
+        return rtrim($path, '/') ?: '/';
     }
 
     /**

@@ -5,6 +5,15 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.1] - 2026-07-21
+
+### Fixed
+
+- **Compiler header reverted with footer.** `compileHtml()` returned `$footer.$html` so the `@extends` directive (moved to the footer during compilation) ended up at the top of the compiled output, and the free-form child content at the bottom. When a layout rendered `$content` (the child's free content) first and `@yield` regions below it, each section was empty — the sections were still registered correctly, but child free-marker (the non-section content) was placed before the footer, so sections could not reference variables defined in the child's body. Reverted to `$html.$footer` so the footer runs after the child body.
+- **`ViewEngine::section()` missing optional-value param.** `section(string $name)` did not accept the optional `$value` argument that the compiled `@section` call expects, causing a `TypeError` on any `@section('name', 'value')` inline syntax.
+- **Router group root route trailing slash.** `applyGroupPrefix('/admin', '/')` returned `/admin/` instead of `/admin`, so a group root route (`$router->group('/admin', fn () => $router->get('/', ...))`) registered as `/admin/` and never matched incoming `/admin`. Fixed by normalizing with `rtrim($path, '/') ?: '/'`.
+- **Router dispatch URI normalization.** `dispatch()` did not normalize the incoming request URI, so `/users/` (with trailing slash typed by the user) failed to match the registered `/users` route. Added `rtrim($uri, '/') ?: '/'`.
+
 ## [0.19.0] - 2026-07-18
 
 ### Documentation
