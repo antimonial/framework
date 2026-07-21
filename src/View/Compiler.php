@@ -24,7 +24,7 @@ class Compiler
      * Compiler version — bump this whenever the compilation logic changes
      * to force recompilation of all cached views.
      */
-    public const VERSION = '0.9.3';
+    public const VERSION = '0.9.4';
 
     /**
      * HTML-escaping expression template (sprintf with the value to escape).
@@ -198,9 +198,14 @@ class Compiler
             // Inline helpers
             '/@include'.$this->exprPattern().'/' => function (array $m): string {
                 /** @var array<int, string> $m */
-                $arg = $m[1] ?? '';
+                $args = $m[1] ?? '';
+                $inner = substr($args, 1, -1);
 
-                return "<?php echo \$__engine->include{$arg}; ?>";
+                if (!str_contains($inner, ',')) {
+                    return "<?php echo \$__engine->include({$inner}, get_defined_vars()); ?>";
+                }
+
+                return "<?php echo \$__engine->include{$args}; ?>";
             },
             '/@yield'.$this->exprPattern().'/' => function (array $m): string {
                 /** @var array<int, string> $m */

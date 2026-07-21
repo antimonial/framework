@@ -196,4 +196,21 @@ final class EngineTest extends TestCase
         self::assertStringContainsString('<?php elseif($b): ?>', $compiled);
         self::assertStringContainsString('<?php endif; ?>', $compiled);
     }
+
+    public function test_include_inherits_loop_variable(): void
+    {
+        $this->tpl('partials/item.php', '<li>{{ $item }}</li>');
+        $this->tpl('loop_include.php', '@foreach($items as $item)@include("partials/item")@endforeach');
+        self::assertSame(
+            '<li>a</li><li>b</li>',
+            $this->engine->render('loop_include', ['items' => ['a', 'b']])
+        );
+    }
+
+    public function test_include_explicit_data_overrides_scope(): void
+    {
+        $this->tpl('partials/nav.php', '<nav>{{ $title }}</nav>');
+        $this->tpl('withinclude.php', '@include("partials/nav", ["title" => "Override"])');
+        self::assertSame('<nav>Override</nav>', $this->engine->render('withinclude', ['title' => 'Original']));
+    }
 }

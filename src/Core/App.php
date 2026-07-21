@@ -112,8 +112,7 @@ class App
     private function notFoundResponse(): Response
     {
         try {
-            $html = View::renderWithLayout('errors/404', 'layouts/main', []);
-            $body = (string) $html;
+            $body = View::render('errors/404');
         } catch (RuntimeException) {
             $body = '<h1>404 Not Found</h1>';
         }

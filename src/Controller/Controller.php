@@ -30,17 +30,16 @@ class Controller
     /**
      * Render a view and return it as a Response.
      *
-     * @example return $this->view('users/index', ['users' => $users], 'layouts/main');
+     * @example return $this->view('users/index', ['users' => $users]);
      *
      * @param  string  $path  View path relative to app/Views (e.g. 'users/index')
      * @param  array<string, mixed>  $data  Variables available in the view
-     * @param  string|null  $layout  Optional layout to wrap the view in
      *
-     * @see View::renderWithLayout()
+     * @see View::render()
      */
-    protected function view(string $path, array $data = [], ?string $layout = null): Response
+    protected function view(string $path, array $data = []): Response
     {
-        return view($path, $data, $layout);
+        return view($path, $data);
     }
 
     /**
