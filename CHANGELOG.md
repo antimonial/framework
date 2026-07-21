@@ -5,6 +5,19 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0] - 2026-07-21
+
+### Removed
+
+- **Dual layout system.** `View::renderWithLayout()` deleted. The `@extends`/`@section`/`@yield` directive-based system is now the ONLY layout mechanism. The third `$layout` parameter was removed from `view()` helper and `Controller::view()` — layouts are declared entirely in the template with `@extends('layouts/main')`.
+- **`App::notFoundResponse()`** no longer passes `'layouts/main'` as a layout param. The `errors/404` view must use `@extends('layouts/main')` on its own.
+
+### Changed
+
+- **`@include` now inherits full caller scope (Blade-style).** The compiler emits `get_defined_vars()` as the second argument to `$__engine->include()` when no explicit data is given. This means loop variables (`$item` in `@foreach($items as $item)`), locally `@set` variables, and any other variable in the calling template's scope are automatically available in the included partial — matching Blade's `@include` semantics. Explicit data still works: `@include("partials/nav", ["title" => "X"])` passes only the explicit array, overriding the inherited scope.
+- **`ViewEngine::include()` simplified.** Removed the `$this->parentData` fallback — data is always passed explicitly from the compiled call.
+- **Compiler VERSION bumped to `0.9.4`** to force cache recompilation for the `@include` scope change.
+
 ## [0.19.1] - 2026-07-21
 
 ### Fixed

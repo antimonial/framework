@@ -62,15 +62,12 @@ class ViewEngine
 
     // ─── Runtime state (stack-based to support nesting) ─────────
 
-    /** @var array<int, array{extendingChild: bool, extendLayout: ?string, parentData: array<string, mixed>}> */
+    /** @var array<int, array{extendingChild: bool, extendLayout: ?string}> */
     private array $evalStack = [];
 
     private bool $extendingChild = false;
 
     private ?string $extendLayout = null;
-
-    /** @var array<string, mixed> */
-    private array $parentData = [];
 
     /** @var array<string, string> */
     private array $sections = [];
@@ -150,18 +147,15 @@ class ViewEngine
     /**
      * Include and render another template, returning its output.
      *
-     * If no data is given, the parent template's variables are inherited.
+     * Data is always passed explicitly from the compiled @include call
+     * (via get_defined_vars() or an explicit array).
      *
      * @param  string  $path  Template path relative to the view directory
-     * @param  array<string, mixed>  $data  Explicit variables for the included template
+     * @param  array<string, mixed>  $data  Variables for the included template
      * @return string Rendered output of the included template
      */
     public function include(string $path, array $data = []): string
     {
-        if (empty($data)) {
-            $data = $this->parentData;
-        }
-
         return $this->render($path, $data);
     }
 
@@ -170,7 +164,7 @@ class ViewEngine
     /**
      * Pop the most recent eval state from the stack.
      *
-     * @return array{extendingChild: bool, extendLayout: ?string, parentData: array<string, mixed>}|null
+     * @return array{extendingChild: bool, extendLayout: ?string}|null
      */
     private function popEvalState(): ?array
     {
@@ -252,10 +246,8 @@ class ViewEngine
         $this->evalStack[] = [
             'extendingChild' => $this->extendingChild,
             'extendLayout' => $this->extendLayout,
-            'parentData' => $this->parentData,
         ];
 
-        $this->parentData = $data;
         extract($data, EXTR_SKIP);
 
         ob_start();
@@ -279,7 +271,6 @@ class ViewEngine
             $this->evalStack[] = [
                 'extendingChild' => false,
                 'extendLayout' => null,
-                'parentData' => $data,
             ];
 
             $result = $this->render(
@@ -296,7 +287,6 @@ class ViewEngine
 
             $this->extendingChild = $prev['extendingChild'];
             $this->extendLayout = $prev['extendLayout'];
-            $this->parentData = $prev['parentData'];
 
             return $result;
         }
@@ -309,7 +299,6 @@ class ViewEngine
 
         $this->extendingChild = $prev['extendingChild'];
         $this->extendLayout = $prev['extendLayout'];
-        $this->parentData = $prev['parentData'];
 
         return $output;
     }

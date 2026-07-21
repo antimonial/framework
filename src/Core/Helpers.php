@@ -22,17 +22,16 @@ use Antimonial\View\View;
 /**
  * Render a view and return a Response.
  *
- * @example return view('users/index', ['users' => $users], 'layouts/main');
+ * @example return view('users/index', ['users' => $users]);
  *
  * @param  string  $path  View path relative to app/Views
  * @param  array<string, mixed>  $data  Variables for the view
- * @param  string|null  $layout  Optional layout to wrap the view
  *
- * @see View::renderWithLayout()
+ * @see View::render()
  */
-function view(string $path, array $data = [], ?string $layout = null): Response
+function view(string $path, array $data = []): Response
 {
-    $html = View::renderWithLayout($path, $layout, $data);
+    $html = View::render($path, $data);
 
     return (new Response)
         ->header('Content-Type', 'text/html; charset=UTF-8')
