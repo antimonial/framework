@@ -86,5 +86,4 @@ class View
     {
         return self::engine()->render($path, $data);
     }
-
 }

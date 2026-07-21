@@ -201,7 +201,7 @@ class Compiler
                 $args = $m[1] ?? '';
                 $inner = substr($args, 1, -1);
 
-                if (!str_contains($inner, ',')) {
+                if (! str_contains($inner, ',')) {
                     return "<?php echo \$__engine->include({$inner}, get_defined_vars()); ?>";
                 }
 
