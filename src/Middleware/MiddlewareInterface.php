@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Antimonial\Middleware;
 
-use Antimonial\Core\App;
 use Antimonial\Http\Request;
 use Antimonial\Http\Response;
 

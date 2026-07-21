@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Antimonial\Session;
 
-use Antimonial\Security\Csrf;
-
 /**
  * Minimal server-side session, built on PHP's native $_SESSION.
  *

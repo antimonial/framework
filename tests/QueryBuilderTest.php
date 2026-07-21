@@ -6,6 +6,7 @@ namespace Antimonial\Tests;
 
 use Antimonial\Database\Connection;
 use Antimonial\Database\QueryBuilder;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 final class QueryBuilderTest extends TestCase
@@ -502,13 +503,13 @@ final class QueryBuilderTest extends TestCase
 
     public function test_identifier_whitelist_rejects_invalid_column(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->qb()->where('id; DROP TABLE users', 1)->getSql();
     }
 
     public function test_identifier_whitelist_rejects_sql_injection(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->qb()->where("name' OR '1'='1", 'test')->getSql();
     }
 
@@ -536,5 +537,48 @@ final class QueryBuilderTest extends TestCase
 
         $qb = new QueryBuilder($this->conn, 'transactions');
         $this->assertSame(500.0, $qb->where('user_id', 1)->sum('amount'));
+    }
+
+    public function test_where_between_produces_correct_sql_and_bindings(): void
+    {
+        $this->conn->expects($this->once())
+            ->method('select')
+            ->with('SELECT * FROM users WHERE age BETWEEN ? AND ?', [18, 65])
+            ->willReturn([]);
+
+        $this->qb()->whereBetween('age', 18, 65)->get();
+    }
+
+    public function test_where_not_between_produces_correct_sql_and_bindings(): void
+    {
+        $this->conn->expects($this->once())
+            ->method('select')
+            ->with('SELECT * FROM users WHERE age NOT BETWEEN ? AND ?', [18, 65])
+            ->willReturn([]);
+
+        $this->qb()->whereNotBetween('age', 18, 65)->get();
+    }
+
+    public function test_where_between_combines_with_other_clauses(): void
+    {
+        $this->conn->expects($this->once())
+            ->method('select')
+            ->with(
+                'SELECT * FROM users WHERE active = ? AND age BETWEEN ? AND ?',
+                [1, 18, 65]
+            )
+            ->willReturn([]);
+
+        $this->qb()
+            ->where('active', 1)
+            ->whereBetween('age', 18, 65)
+            ->get();
+    }
+
+    public function test_where_between_validates_identifier(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->qb()->whereBetween('bad-column!', 1, 2);
     }
 }

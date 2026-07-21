@@ -286,19 +286,12 @@ class Compiler
 
         array_pop($this->blockStack);
 
-        $php = match ($openType) {
+        return match ($openType) {
             'if', 'unless', 'isset', 'empty' => '<?php endif; ?>',
             'switch' => $this->closeSwitch(),
             'section' => '<?php $__engine->endSection(); ?>',
             default => "<?php end{$openType}; ?>",
         };
-
-        // Also handle "endsection" as section close
-        if ($type === 'endsection') {
-            return '<?php $__engine->endSection(); ?>';
-        }
-
-        return $php;
     }
 
     // ─── Switch helpers ────────────────────────────────────────

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Antimonial\Routing;
 
-use Antimonial\Middleware\MiddlewareInterface;
 use Closure;
 
 /**

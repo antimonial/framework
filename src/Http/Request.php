@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Antimonial\Http;
 
-use Antimonial\Routing\Router;
-
 /**
  * HTTP request wrapper.
  *
@@ -395,6 +393,25 @@ class Request
     public function route(string $key, mixed $default = null): mixed
     {
         return $this->attributes[$key] ?? $default;
+    }
+
+    /**
+     * Whether the request expects a JSON response.
+     *
+     * Checks the Accept header and the X-Requested-With header.
+     */
+    public function wantsJson(): bool
+    {
+        /** @var mixed $acceptRaw */
+        $acceptRaw = $this->header('Accept', '');
+        /** @var mixed $xhrRaw */
+        $xhrRaw = $this->header('X-Requested-With', '');
+
+        $accept = is_string($acceptRaw) ? $acceptRaw : '';
+        $xhr = is_string($xhrRaw) ? $xhrRaw : '';
+
+        return stripos($accept, 'application/json') !== false
+            || strtolower($xhr) === 'xmlhttprequest';
     }
 
     /**

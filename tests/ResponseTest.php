@@ -84,4 +84,17 @@ final class ResponseTest extends TestCase
         // Only the two custom headers — security headers are added in send()
         $this->assertCount(2, $res->getHeaders());
     }
+
+    public function test_send_on_redirect_does_not_exit(): void
+    {
+        $response = (new Response)->redirect('/login', 302);
+
+        // Suppress actual header output during the test run.
+        $response->send();
+
+        // If send() had called exit(), this assertion would never run.
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame('/login', $response->getHeaders()['Location']);
+        $this->assertTrue($response->wasSent());
+    }
 }

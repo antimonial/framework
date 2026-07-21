@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Antimonial\Routing;
 
-use Antimonial\Core\App;
 use Antimonial\Core\ErrorHandler;
 use Antimonial\Http\Request;
 use Antimonial\Middleware\MiddlewareInterface;

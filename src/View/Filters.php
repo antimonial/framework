@@ -81,14 +81,7 @@ final class Filters
      */
     public static function escape(mixed $value): string
     {
-        $str = match (true) {
-            is_string($value) => $value,
-            is_int($value), is_float($value), is_bool($value) => (string) $value,
-            $value === null => '',
-            default => '',
-        };
-
-        return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
+        return htmlspecialchars(self::toString($value), ENT_QUOTES, 'UTF-8');
     }
 
     /**
@@ -96,10 +89,14 @@ final class Filters
      */
     public static function raw(mixed $value): string
     {
+        return self::toString($value);
+    }
+
+    private static function toString(mixed $value): string
+    {
         return match (true) {
             is_string($value) => $value,
             is_int($value), is_float($value), is_bool($value) => (string) $value,
-            $value === null => '',
             default => '',
         };
     }
@@ -113,7 +110,7 @@ final class Filters
     public static function length(mixed $value): int
     {
         if (is_string($value)) {
-            return strlen($value);
+            return mb_strlen($value);
         }
         if (is_countable($value)) {
             return count($value);

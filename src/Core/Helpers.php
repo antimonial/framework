@@ -189,6 +189,8 @@ function old(string $key, mixed $default = ''): mixed
 
 /**
  * Dump variables and die (debug helper).
+ */
+function dd(mixed ...$vars): never
 {
     echo '<pre style="background:#1e1e2e;color:#cdd6f4;padding:1rem;font-family:monospace;">';
     foreach ($vars as $var) {

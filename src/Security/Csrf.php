@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Antimonial\Security;
 
-use Antimonial\Middleware\CsrfMiddleware;
 use Antimonial\Session\Session;
 
 /**

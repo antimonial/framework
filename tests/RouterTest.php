@@ -121,7 +121,7 @@ final class RouterTest extends TestCase
         $this->router->dispatch($request);
     }
 
-    public function test_dispatch_wrong_method_throws_exception(): void
+    public function test_dispatch_selects_correct_method_route(): void
     {
         $handler = fn () => 'store';
         $this->router->post('/users', $handler);

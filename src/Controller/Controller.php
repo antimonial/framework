@@ -7,9 +7,7 @@ namespace Antimonial\Controller;
 use Antimonial\Database\DB;
 use Antimonial\Http\Request;
 use Antimonial\Http\Response;
-use Antimonial\Http\UploadedFile;
 use Antimonial\Http\ValidationException;
-use Antimonial\View\View;
 
 /**
  * Base controller class.
@@ -424,6 +422,6 @@ class Controller
 
         return $isNum
             ? ($upper ? (float) $value <= $limit : (float) $value >= $limit)
-            : ($upper ? strlen($value) <= (int) $limit : strlen($value) >= (int) $limit);
+            : ($upper ? mb_strlen($value) <= (int) $limit : mb_strlen($value) >= (int) $limit);
     }
 }

@@ -44,32 +44,10 @@ final class GuestMiddleware implements MiddlewareInterface
             return $response;
         }
 
-        if (self::wantsJson($request)) {
-            return (new Response)
-                ->status(403)
-                ->header('Content-Type', 'application/json; charset=UTF-8')
-                ->body('{"error":"Forbidden."}');
+        if ($request->wantsJson()) {
+            return (new Response)->json(['error' => 'Forbidden.'], 403);
         }
 
         return (new Response)->redirect(self::HOME_URL, 302);
-    }
-
-    /**
-     * Whether the request expects a JSON response.
-     *
-     * @param  Request  $request  Incoming HTTP request
-     */
-    private static function wantsJson(Request $request): bool
-    {
-        /** @var mixed $acceptRaw */
-        $acceptRaw = $request->header('Accept', '');
-        /** @var mixed $xhrRaw */
-        $xhrRaw = $request->header('X-Requested-With', '');
-
-        $accept = is_string($acceptRaw) ? $acceptRaw : '';
-        $xhr = is_string($xhrRaw) ? $xhrRaw : '';
-
-        return stripos($accept, 'application/json') !== false
-            || strtolower($xhr) === 'xmlhttprequest';
     }
 }

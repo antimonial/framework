@@ -1115,11 +1115,7 @@ class QueryBuilder
     {
         $normalized = is_string($value) ? strtoupper($value) : '';
 
-        return in_array(
-            $normalized,
-            ['=', '!=', '<>', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE'],
-            true
-        );
+        return in_array($normalized, self::ALLOWED_OPERATORS, true);
     }
 
     /**

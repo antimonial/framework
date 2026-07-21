@@ -140,16 +140,10 @@ class App
      */
     private function validationErrorResponse(array $errors, Request $request): Response
     {
-        $wantsJson = $this->requestWantsJson($request);
         $sessionsEnabled = Config::get('app.session', false) === true;
 
-        if ($wantsJson || ! $sessionsEnabled) {
-            $body = json_encode(['errors' => $errors], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-
-            return (new Response)
-                ->status(422)
-                ->header('Content-Type', 'application/json; charset=UTF-8')
-                ->body($body);
+        if ($request->wantsJson() || ! $sessionsEnabled) {
+            return (new Response)->json(['errors' => $errors], 422);
         }
 
         Session::flash('errors', $errors);
@@ -159,25 +153,6 @@ class App
         $referer = $request->header('referer', '/') ?? '/';
 
         return (new Response)->redirect($referer, 303);
-    }
-
-    /**
-     * Whether the request expects a JSON response.
-     *
-     * @param  Request  $request  The incoming request
-     */
-    private function requestWantsJson(Request $request): bool
-    {
-        /** @var mixed $accept */
-        $accept = $request->header('Accept', '');
-        /** @var mixed $xhr */
-        $xhr = $request->header('X-Requested-With', '');
-
-        $acceptStr = is_string($accept) ? $accept : '';
-        $xhrStr = is_string($xhr) ? $xhr : '';
-
-        return stripos($acceptStr, 'application/json') !== false
-            || strtolower($xhrStr) === 'xmlhttprequest';
     }
 
     /**

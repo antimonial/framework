@@ -46,32 +46,10 @@ final class AuthMiddleware implements MiddlewareInterface
             return $response;
         }
 
-        if (self::wantsJson($request)) {
-            return (new Response)
-                ->status(401)
-                ->header('Content-Type', 'application/json; charset=UTF-8')
-                ->body('{"error":"Unauthenticated."}');
+        if ($request->wantsJson()) {
+            return (new Response)->json(['error' => 'Unauthenticated.'], 401);
         }
 
         return (new Response)->redirect(self::LOGIN_URL, 302);
-    }
-
-    /**
-     * Whether the request expects a JSON response.
-     *
-     * @param  Request  $request  Incoming HTTP request
-     */
-    private static function wantsJson(Request $request): bool
-    {
-        /** @var mixed $acceptRaw */
-        $acceptRaw = $request->header('Accept', '');
-        /** @var mixed $xhrRaw */
-        $xhrRaw = $request->header('X-Requested-With', '');
-
-        $accept = is_string($acceptRaw) ? $acceptRaw : '';
-        $xhr = is_string($xhrRaw) ? $xhrRaw : '';
-
-        return stripos($accept, 'application/json') !== false
-            || strtolower($xhr) === 'xmlhttprequest';
     }
 }
