@@ -5,6 +5,28 @@ All notable changes to the Antimonial framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] - 2026-07-21
+
+### Fixed
+
+- **Multibyte string handling in `Filters::length()` and `Controller::passesLength()`.** Both now use `mb_strlen()` instead of `strlen()` so `|length` counts characters, not bytes, and `min`/`max` validation rules on multibyte strings work correctly.
+- **Missing `never` return type on `dd()`** — the helper function had no declared return type, causing a parse error on certain PHP versions.
+
+### Changed
+
+- **`Filters::escape()` and `raw()` deduplicated.** Extracted a private `toString(mixed): string` helper to eliminate identical type-coercion logic in both methods.
+- **`App::validationErrorResponse()` simplified.** Uses `Response::json()` instead of manual `json_encode()` + Content-Type headers. The `requestWantsJson()` wrapper was inlined (was a 1-line pass-through to `$request->wantsJson()`).
+- **`AuthMiddleware`/`GuestMiddleware` JSON responses.** Both now use `(new Response)->json()` instead of hand-built JSON strings with manual status/header/body calls.
+- **`QueryBuilder::isOperator()` deduplicated.** Now references `self::ALLOWED_OPERATORS` instead of rebuilding the array inline.
+- **`Request::wantsJson()` deduplicated.** Extracted to `Request::wantsJson()`, removing 3 identical copies in `App`, `AuthMiddleware`, and `GuestMiddleware`.
+- **`Compiler::closeBlock()` dead code removed.** The `if ($type === 'endsection')` branch was unreachable — the `match` above it already handles `'section'`.
+- **Unused imports removed** from 8 source files (`Session`, `MiddlewareInterface`, `Csrf`, `Request`, `Router`, `Route`, `Controller`).
+
+### Removed
+
+- **`QueryBuilderBetweenTest.php`** merged into `QueryBuilderTest.php`.
+- **`ResponseRedirectTest.php`** merged into `ResponseTest.php`.
+
 ## [0.20.0] - 2026-07-21
 
 ### Removed
